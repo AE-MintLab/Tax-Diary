@@ -104,16 +104,16 @@ export default function App() {
   const [slideIdx,     setSlideIdx]     = useState(0);
   const [taxYear,      setTaxYear]      = useState(2026);
   const [receipts,     setReceipts]     = useState([]);
-  const [income,       setIncome]       = useState("91800");
+  const [income,       setIncome]       = useState("");
   const [otherIncomeAmt, setOtherIncomeAmt] = useState("0");
-  const [epfAmt,       setEpfAmt]       = useState("10098");
-  const [pcbAmt,       setPcbAmt]       = useState("3600");
+  const [epfAmt,       setEpfAmt]       = useState("");
+  const [pcbAmt,       setPcbAmt]       = useState("");
   const [socsoAmt,     setSocsoAmt]     = useState("350");
   const [zakatAmt,     setZakatAmt]     = useState("0");
   const [isSelfOKU,    setIsSelfOKU]    = useState(false);
   const [maritalStatus, setMaritalStatus] = useState("single"); // "single" | "married" — set under Profile
   const hasSpouse = maritalStatus === "married";
-  const [spouseInc,    setSpouseInc]    = useState("54000");
+  const [spouseInc,    setSpouseInc]    = useState("");
   const [spouseEpfAmt, setSpouseEpfAmt] = useState("");
   const [spouseEpfTouched, setSpouseEpfTouched] = useState(false);
   const [spouseSocsoAmt, setSpouseSocsoAmt] = useState("350");
@@ -121,13 +121,13 @@ export default function App() {
   const [spouseName,   setSpouseName]   = useState("Spouse");
   const [spouseDisabled, setSpouseDisabled] = useState(false);
   const [childrenClaimedBy, setChildrenClaimedBy] = useState("mine"); // "mine" | "spouse" — who claims the children reliefs
-  const [childU18,     setChildU18]     = useState(1);
+  const [childU18,     setChildU18]     = useState(0);
   const [childHiEduDegree, setChildHiEduDegree] = useState(0); // Diploma+/Degree/Masters/PhD — RM8,000 each
   const [childHiEduOther, setChildHiEduOther] = useState(0);   // Other qualifying full-time study (pre-degree, matriculation, A-Level etc) — RM2,000 each
   const [childDisabled, setChildDisabled] = useState(0);
   const [childDisabledHiEdu, setChildDisabledHiEdu] = useState(0);
   const [homeLoanTier, setHomeLoanTier] = useState("under500k"); // "under500k" (RM7,000 cap) | "500to750k" (RM5,000 cap)
-  const [clientName,   setClientName]   = useState("Ahmad");
+  const [clientName,   setClientName]   = useState("");
   const [toast,        setToast]        = useState("");
   const [expanded,     setExpanded]     = useState({ Financial: false, Medical: false, Education: false, Lifestyle: false, Property: false });
   const [rcptSearch,   setRcptSearch]   = useState("");
@@ -179,6 +179,64 @@ export default function App() {
   useEffect(() => { init(); }, []);
   useEffect(() => { const t = setInterval(() => setNow(Date.now()), 60000); return () => clearInterval(t); }, []);
 
+  // ── PWA Install Banner ──────────────────────────────────────────────────────
+  // Android/Chrome fires 'beforeinstallprompt' when install criteria are met
+  // (manifest + service worker + HTTPS). We capture it instead of letting the
+  // browser show its own generic mini-banner, so we can show our own styled
+  // one and re-trigger the prompt whenever the user taps our button.
+  // iOS Safari never fires this event — there is no programmatic install API
+  // there — so for iOS we show a manual "tap Share" instruction instead.
+  const [installPromptEvent, setInstallPromptEvent] = useState(null);
+  const [showInstallBanner, setShowInstallBanner] = useState(false);
+  const [isIOS, setIsIOS] = useState(false);
+  const [isStandalone, setIsStandalone] = useState(false);
+
+  useEffect(() => {
+    const standalone = window.matchMedia?.("(display-mode: standalone)")?.matches || window.navigator.standalone === true;
+    setIsStandalone(!!standalone);
+    const ios = /iphone|ipad|ipod/i.test(window.navigator.userAgent) && !window.MSStream;
+    setIsIOS(ios);
+
+    const dismissedAt = localStorage.getItem("mc26-install-dismissed");
+    const recentlyDismissed = dismissedAt && (Date.now() - parseInt(dismissedAt, 10) < 14 * DAY);
+
+    const onBeforeInstallPrompt = (e) => {
+      e.preventDefault(); // stop Chrome's own mini-infobar
+      setInstallPromptEvent(e);
+      if (!standalone && !recentlyDismissed) setShowInstallBanner(true);
+    };
+    window.addEventListener("beforeinstallprompt", onBeforeInstallPrompt);
+
+    // iOS gets no event to listen for — just show the manual-instructions
+    // banner directly, once, if not already installed and not recently dismissed.
+    if (ios && !standalone && !recentlyDismissed) setShowInstallBanner(true);
+
+    const onInstalled = () => { setShowInstallBanner(false); setInstallPromptEvent(null); };
+    window.addEventListener("appinstalled", onInstalled);
+
+    return () => {
+      window.removeEventListener("beforeinstallprompt", onBeforeInstallPrompt);
+      window.removeEventListener("appinstalled", onInstalled);
+    };
+  }, []);
+
+  const handleInstallClick = async () => {
+    if (installPromptEvent) {
+      installPromptEvent.prompt();
+      const { outcome } = await installPromptEvent.userChoice;
+      if (outcome === "accepted") showToast("Installing Tax Diary…");
+      setInstallPromptEvent(null);
+      setShowInstallBanner(false);
+    }
+    // On iOS there's nothing to "click" programmatically — the banner itself
+    // already shows the Share → Add to Home Screen instructions, so this
+    // button just dismisses it once they've done that manually.
+  };
+  const dismissInstallBanner = () => {
+    setShowInstallBanner(false);
+    try { localStorage.setItem("mc26-install-dismissed", String(Date.now())); } catch {}
+  };
+
   // Lock background page scroll whenever any modal is open — without this, touch/wheel
   // events pass through the modal's backdrop and scroll the dashboard behind it.
   useEffect(() => {
@@ -194,25 +252,18 @@ export default function App() {
       const ob = await store.get("mc26-onboard");
       const r  = await store.get("mc26-receipts");
       if (r?.value) setReceipts(JSON.parse(r.value));
-      else setReceipts([
-        { id: 101, taxYear: 2026, category: "lifestyle", amount: 1200, merchant: "Popular Bookstore KLCC", date: "2026-03-15", image: null, owner: "joint" },
-        { id: 102, taxYear: 2026, category: "med_ins",   amount: 2200, merchant: "Prudential Takaful",   date: "2026-02-10", image: null, owner: "joint" },
-        { id: 103, taxYear: 2026, category: "sspn",      amount: 3200, merchant: "PTPTN SSPN Prime",     date: "2026-05-20", image: null, owner: "joint" },
-        { id: 104, taxYear: 2026, category: "sports",    amount: 450,  merchant: "Decathlon PJ",         date: "2026-04-02", image: null, owner: "joint" },
-        { id: 105, taxYear: 2026, category: "ev_green",  amount: 850,  merchant: "Dahua Home CCTV Security", date: "2026-06-12", image: null, owner: "mine" },
-        { id: 106, taxYear: 2026, category: "tourism",   amount: 600,  merchant: "Sunway Lagoon Theme Park", date: "2026-07-04", image: null, owner: "joint" },
-      ]);
+      else setReceipts([]);
 
       const i = await store.get("mc26-income");
       if (i?.value) {
         const p = JSON.parse(i.value);
-        setIncome(p.income || "91800"); setOtherIncomeAmt(p.otherIncomeAmt || "0"); setEpfAmt(p.epf || "10098"); setSocsoAmt(p.socsoAmt || "350"); setZakatAmt(p.zakatAmt || "0"); setIsSelfOKU(p.isSelfOKU || false);
-        setMaritalStatus(p.maritalStatus || (p.hasSpouse ? "married" : "single")); setSpouseInc(p.spouseInc || "54000"); setSpouseDisabled(p.spouseDisabled || false); setSpouseName(p.spouseName || "Spouse"); setPcbAmt(p.pcbAmt || "3600"); setSpouseEpfAmt(p.spouseEpfAmt || ""); setSpouseSocsoAmt(p.spouseSocsoAmt || "350"); setSpousePcbAmt(p.spousePcbAmt || ""); setChildrenClaimedBy(p.childrenClaimedBy || "mine"); if (p.spouseEpfAmt) setSpouseEpfTouched(true);
-        setChildU18(p.childU18 || 1); setChildHiEduDegree(p.childHiEduDegree ?? p.childHiEdu ?? 0); setChildHiEduOther(p.childHiEduOther || 0); setChildDisabled(p.childDisabled || 0); setChildDisabledHiEdu(p.childDisabledHiEdu || 0); setHomeLoanTier(p.homeLoanTier || "under500k");
+        setIncome(p.income || ""); setOtherIncomeAmt(p.otherIncomeAmt || "0"); setEpfAmt(p.epf || ""); setSocsoAmt(p.socsoAmt || "350"); setZakatAmt(p.zakatAmt || "0"); setIsSelfOKU(p.isSelfOKU || false);
+        setMaritalStatus(p.maritalStatus || (p.hasSpouse ? "married" : "single")); setSpouseInc(p.spouseInc || ""); setSpouseDisabled(p.spouseDisabled || false); setSpouseName(p.spouseName || "Spouse"); setPcbAmt(p.pcbAmt || ""); setSpouseEpfAmt(p.spouseEpfAmt || ""); setSpouseSocsoAmt(p.spouseSocsoAmt || "350"); setSpousePcbAmt(p.spousePcbAmt || ""); setChildrenClaimedBy(p.childrenClaimedBy || "mine"); if (p.spouseEpfAmt) setSpouseEpfTouched(true);
+        setChildU18(p.childU18 || 0); setChildHiEduDegree(p.childHiEduDegree ?? p.childHiEdu ?? 0); setChildHiEduOther(p.childHiEduOther || 0); setChildDisabled(p.childDisabled || 0); setChildDisabledHiEdu(p.childDisabledHiEdu || 0); setHomeLoanTier(p.homeLoanTier || "under500k");
       }
 
       const s = await store.get("mc26-settings");
-      if (s?.value) { const p = JSON.parse(s.value); setClientName(p.clientName || "Ahmad"); }
+      if (s?.value) { const p = JSON.parse(s.value); setClientName(p.clientName || ""); }
 
       const b = await store.get("mc26-billing");
       if (b?.value) setBilling(JSON.parse(b.value));
@@ -324,10 +375,10 @@ export default function App() {
       const r = await store.get(`mintcukai-vault:${code}`, true);
       if (!r?.value) { showToast("Vault no longer available"); setLoadingVault(false); setPendingPull(null); return; }
       const d = JSON.parse(r.value);
-      setReceipts(d.receipts || []); setIncome(d.income ?? "91800"); setOtherIncomeAmt(d.otherIncomeAmt ?? "0"); setEpfAmt(d.epfAmt ?? "10098"); setSocsoAmt(d.socsoAmt ?? "350"); setZakatAmt(d.zakatAmt ?? "0"); setIsSelfOKU(d.isSelfOKU || false);
-      setMaritalStatus(d.maritalStatus || (d.hasSpouse ? "married" : "single")); setSpouseInc(d.spouseInc ?? "54000"); setSpouseDisabled(!!d.spouseDisabled); setSpouseName(d.spouseName || "Spouse"); setPcbAmt(d.pcbAmt ?? "3600"); setSpouseEpfAmt(d.spouseEpfAmt ?? ""); setSpouseSocsoAmt(d.spouseSocsoAmt ?? "350"); setSpousePcbAmt(d.spousePcbAmt ?? ""); setChildrenClaimedBy(d.childrenClaimedBy || "mine"); if (d.spouseEpfAmt) setSpouseEpfTouched(true);
-      setChildU18(d.childU18 ?? 1); setChildHiEduDegree(d.childHiEduDegree ?? d.childHiEdu ?? 0); setChildHiEduOther(d.childHiEduOther ?? 0); setChildDisabled(d.childDisabled ?? 0); setChildDisabledHiEdu(d.childDisabledHiEdu ?? 0); setHomeLoanTier(d.homeLoanTier || "under500k");
-      setClientName(d.clientName || "Ahmad");
+      setReceipts(d.receipts || []); setIncome(d.income ?? ""); setOtherIncomeAmt(d.otherIncomeAmt ?? "0"); setEpfAmt(d.epfAmt ?? ""); setSocsoAmt(d.socsoAmt ?? "350"); setZakatAmt(d.zakatAmt ?? "0"); setIsSelfOKU(d.isSelfOKU || false);
+      setMaritalStatus(d.maritalStatus || (d.hasSpouse ? "married" : "single")); setSpouseInc(d.spouseInc ?? ""); setSpouseDisabled(!!d.spouseDisabled); setSpouseName(d.spouseName || "Spouse"); setPcbAmt(d.pcbAmt ?? ""); setSpouseEpfAmt(d.spouseEpfAmt ?? ""); setSpouseSocsoAmt(d.spouseSocsoAmt ?? "350"); setSpousePcbAmt(d.spousePcbAmt ?? ""); setChildrenClaimedBy(d.childrenClaimedBy || "mine"); if (d.spouseEpfAmt) setSpouseEpfTouched(true);
+      setChildU18(d.childU18 ?? 0); setChildHiEduDegree(d.childHiEduDegree ?? d.childHiEdu ?? 0); setChildHiEduOther(d.childHiEduOther ?? 0); setChildDisabled(d.childDisabled ?? 0); setChildDisabledHiEdu(d.childDisabledHiEdu ?? 0); setHomeLoanTier(d.homeLoanTier || "under500k");
+      setClientName(d.clientName || "");
       await store.set("mc26-receipts", JSON.stringify(d.receipts || []));
       await store.set("mc26-income", JSON.stringify({ income: d.income, otherIncomeAmt: d.otherIncomeAmt, epf: d.epfAmt, socsoAmt: d.socsoAmt, pcbAmt: d.pcbAmt, zakatAmt: d.zakatAmt, isSelfOKU: d.isSelfOKU, maritalStatus: d.maritalStatus, spouseInc: d.spouseInc, spouseEpfAmt: d.spouseEpfAmt, spouseSocsoAmt: d.spouseSocsoAmt, spousePcbAmt: d.spousePcbAmt, spouseDisabled: d.spouseDisabled, spouseName: d.spouseName, childU18: d.childU18, childHiEduDegree: d.childHiEduDegree, childHiEduOther: d.childHiEduOther, childDisabled: d.childDisabled, childDisabledHiEdu: d.childDisabledHiEdu, homeLoanTier: d.homeLoanTier, childrenClaimedBy: d.childrenClaimedBy }));
       await store.set("mc26-settings", JSON.stringify({ clientName: d.clientName }));
@@ -598,7 +649,9 @@ export default function App() {
     const fn = receiptReturnTo; setReceiptReturnTo(null); if (fn) fn();
   };
 
-  // Enhanced AI OCR with Gemini 2.5 Flash and YA 2026 categories
+  // Enhanced AI OCR — calls our own /api/scan-receipt serverless function, which
+  // holds the Gemini key server-side (see api/scan-receipt.js). The browser never
+  // sees the API key.
   const handleOCRUpload = async (e) => {
     const f = e.target.files[0]; if (!f) return;
     if (f.size > 5000000) return showToast("Image too large (max 5MB)");
@@ -608,21 +661,21 @@ export default function App() {
       try {
         const base64Data = dataUrl.split(",")[1];
         const mimeType = dataUrl.split(";")[0].split(":")[1] || "image/png";
-        const apiKey = "";
-        const promptText = `Extract this Malaysian purchase receipt as JSON: {"merchant":"string","amount":number,"date":"YYYY-MM-DD","category":"one of: lifestyle, med_self, med_vaccination, med_dental, med_checkup, med_par, sports, edu_fees, edu_skills, med_ins, life_ins, tourism, childcare, sspn, epf, ev_green, home_loan, dis_child, dis_equip, breastfeed"}. Include CCTV, food waste grinders, transit centres, theme parks, NPRA-registered vaccines, dental. Return ONLY raw JSON. Today: ${new Date().toISOString().slice(0, 10)}.`;
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
+        const response = await fetch("/api/scan-receipt", {
           method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: promptText }, { inlineData: { mimeType, data: base64Data } }] }], generationConfig: { responseMimeType: "application/json" } })
+          body: JSON.stringify({ base64Data, mimeType })
         });
-        if (!response.ok) throw new Error("API call failed");
-        const data = await response.json();
-        const parsed = JSON.parse(data.candidates?.[0]?.content?.parts?.[0]?.text || "{}");
+        const parsed = await response.json();
+        if (!response.ok) throw new Error(parsed?.error || "Scan failed");
         setForm(f => ({ ...f, merchant: parsed.merchant || "Extracted Receipt", amount: parsed.amount ? String(parsed.amount) : "0.00", date: parsed.date || new Date().toISOString().split("T")[0], category: parsed.category || "lifestyle", image: dataUrl, taxYear }));
         setShowScan(false); setShowReceipt(true);
         showToast(`AI Extracted: ${parsed.merchant || "Receipt"} · RM ${parsed.amount || "0"}`);
       } catch (err) {
-        setForm(f => ({ ...f, merchant: "Dahua Security / Popular", amount: "350.00", date: new Date().toISOString().split("T")[0], category: "ev_green", image: dataUrl, taxYear }));
-        setShowScan(false); setShowReceipt(true); showToast("Auto-filled receipt details");
+        // Honest failure — drop into manual entry with the photo attached rather
+        // than silently faking merchant/amount/category.
+        setForm(f => ({ ...f, image: dataUrl, taxYear }));
+        setShowScan(false); setShowReceipt(true);
+        showToast("AI scan failed — fill in the details manually below");
       } finally { setOcrLoading(false); }
     };
     rd.readAsDataURL(f);
@@ -692,6 +745,23 @@ export default function App() {
         </div>
       )}
 
+      {/* Install App Banner — Android shows a real install button (beforeinstallprompt);
+          iOS shows manual "tap Share" instructions since iOS has no install API. */}
+      {showInstallBanner && !isStandalone && (
+        <div className="bg-gray-900 text-white text-xs font-bold py-2.5 px-4 flex items-center justify-center gap-3 flex-wrap">
+          <Smartphone className="w-3.5 h-3.5 text-pink-400 shrink-0" />
+          {isIOS ? (
+            <span>Install Tax Diary: tap <strong>Share</strong> below, then <strong>"Add to Home Screen"</strong></span>
+          ) : (
+            <>
+              <span>Install Tax Diary for quick, offline access</span>
+              <button onClick={handleInstallClick} className="px-3 py-1 bg-pink-600 hover:bg-pink-500 rounded-lg">Install</button>
+            </>
+          )}
+          <button onClick={dismissInstallBanner} className="text-gray-400 hover:text-white ml-1"><X className="w-3.5 h-3.5" /></button>
+        </div>
+      )}
+
       {/* Header */}
       <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-gray-200 px-4 py-3">
         <div className="max-w-6xl mx-auto flex justify-between items-center gap-3 flex-wrap">
@@ -737,7 +807,7 @@ export default function App() {
           <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-fuchsia-200/50 rounded-full blur-2xl pointer-events-none" />
 
           <div className="border-b border-pink-100 pb-4 relative">
-            <h1 className="text-xl sm:text-2xl font-black tracking-tight text-gray-800">Salam, {clientName} 👋</h1>
+            <h1 className="text-xl sm:text-2xl font-black tracking-tight text-gray-800">Salam{clientName ? `, ${clientName}` : ""} 👋</h1>
             <p className="text-xs text-purple-500/80 font-semibold">Track YA {taxYear} reliefs · Log receipts · Maximize your refund before 31 Dec {taxYear}</p>
           </div>
           <div className="grid grid-cols-2 gap-3 relative">
