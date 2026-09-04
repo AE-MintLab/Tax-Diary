@@ -673,6 +673,7 @@ export default function App() {
       } catch (err) {
         // Honest failure — drop into manual entry with the photo attached rather
         // than silently faking merchant/amount/category.
+        console.error("AI scan failed:", err);
         setForm(f => ({ ...f, image: dataUrl, taxYear }));
         setShowScan(false); setShowReceipt(true);
         showToast("AI scan failed — fill in the details manually below");
