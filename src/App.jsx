@@ -699,7 +699,7 @@ export default function App() {
       <div className={`fixed inset-0 bg-gradient-to-br ${sl.bg} flex flex-col justify-between overflow-hidden select-none`} onTouchStart={onTS} onTouchEnd={onTE}>
         <div className="flex justify-between items-center p-6 z-10">
           <div className="flex items-center gap-2">
-            <div className="w-9 h-9 rounded-xl bg-pink-600 flex items-center justify-center text-white font-extrabold text-sm">TD</div>
+            <img src="/icons/icon-512.png" alt="Tax Diary" className="w-9 h-9 rounded-xl object-contain bg-white/90 p-0.5" />
             <span className="text-white font-extrabold text-lg">Tax Diary</span>
           </div>
           <button onClick={doneOnboard} className="text-gray-300 text-xs font-bold px-3 py-1.5 rounded-full bg-white/10 border border-white/20">Skip</button>
@@ -767,7 +767,7 @@ export default function App() {
       <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-gray-200 px-4 py-3">
         <div className="max-w-6xl mx-auto flex justify-between items-center gap-3 flex-wrap">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-pink-600 to-fuchsia-600 flex items-center justify-center text-white"><Calculator className="w-5 h-5" /></div>
+            <img src="/icons/icon-512.png" alt="Tax Diary" className="w-9 h-9 rounded-xl object-contain" />
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-base font-extrabold text-gray-900">Tax Diary</span>
