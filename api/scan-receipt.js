@@ -17,6 +17,7 @@ export default async function handler(req, res) {
 
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
+    console.error("[scan-receipt] GEMINI_API_KEY is not set");
     return res.status(500).json({
       error: "GEMINI_API_KEY is not set. Add it in Vercel → Settings → Environment Variables, then redeploy.",
     });
@@ -24,6 +25,7 @@ export default async function handler(req, res) {
 
   const { base64Data, mimeType } = req.body || {};
   if (!base64Data || !mimeType) {
+    console.error("[scan-receipt] Missing base64Data or mimeType in request body");
     return res.status(400).json({ error: "Missing base64Data or mimeType" });
   }
 
@@ -54,15 +56,27 @@ export default async function handler(req, res) {
 
     if (!geminiRes.ok) {
       const errText = await geminiRes.text();
-      return res.status(502).json({ error: "Gemini API call failed", detail: errText });
+      console.error(`[scan-receipt] Gemini API returned ${geminiRes.status}:`, errText);
+      return res.status(502).json({ error: `Gemini API call failed (${geminiRes.status})`, detail: errText });
     }
 
     const data = await geminiRes.json();
-    const parsedText = data.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
-    const parsed = JSON.parse(parsedText);
+    const candidate = data.candidates?.[0];
+    const parsedText = candidate?.content?.parts?.[0]?.text;
 
+    if (!parsedText) {
+      // Gemini responded 200 but returned no usable content — usually a safety-filter
+      // block (finishReason: SAFETY) or an empty candidates array. Log the full
+      // response so we can see exactly why in Vercel's Logs page.
+      console.error("[scan-receipt] Gemini returned no extractable text. Full response:", JSON.stringify(data));
+      return res.status(502).json({ error: "Gemini returned no result (possibly blocked or empty response)", detail: JSON.stringify(data) });
+    }
+
+    const parsed = JSON.parse(parsedText);
+    console.log("[scan-receipt] success:", parsed.merchant, parsed.amount);
     return res.status(200).json(parsed);
   } catch (err) {
+    console.error("[scan-receipt] Unhandled error:", err);
     return res.status(500).json({ error: "Server error", detail: String(err) });
   }
 }
