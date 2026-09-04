@@ -1,13 +1,14 @@
 // Tax Diary service worker — plain hand-written SW (no Workbox/vite-plugin-pwa
 // dependency). Bump CACHE_VERSION whenever you ship a new build so old
 // caches get cleared out.
-const CACHE_VERSION = "tax-diary-v1";
+const CACHE_VERSION = "tax-diary-v2";
 const APP_SHELL = [
   "/",
   "/manifest.json",
   "/icons/icon-192.png",
   "/icons/icon-512.png",
   "/icons/apple-touch-icon.png",
+  "/brand/wordmark.png",
 ];
 
 self.addEventListener("install", (event) => {
