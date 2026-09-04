@@ -677,7 +677,7 @@ export default function App() {
         console.error("AI scan failed:", err);
         setForm(f => ({ ...f, image: dataUrl, taxYear }));
         setShowScan(false); setShowReceipt(true);
-        showToast("AI scan failed — fill in the details manually below");
+        showToast(`AI scan failed: ${err.message} — fill in manually`);
       } finally { setOcrLoading(false); }
     };
     rd.readAsDataURL(f);
