@@ -149,6 +149,7 @@ export default function App() {
   const [receiptReturnTo, setReceiptReturnTo] = useState(null); // fn to call when the Add/Edit Receipt form is dismissed
   const [showFilterPick, setShowFilterPick] = useState(false); // custom category-filter picker for the Vault list (replaces native <select>)
   const [showSpouseDetail, setShowSpouseDetail] = useState(false);
+  const [previewImage, setPreviewImage] = useState(null); // full-size receipt photo lightbox — { src, merchant } or null
   const [form,         setForm]         = useState(blank());
   const [editId,       setEditId]       = useState(null);
   const touchX = useRef(null);
@@ -240,10 +241,10 @@ export default function App() {
   // Lock background page scroll whenever any modal is open — without this, touch/wheel
   // events pass through the modal's backdrop and scroll the dashboard behind it.
   useEffect(() => {
-    const anyModalOpen = showSettings || showTools || showReceipt || showCatPick || showFilterPick || showScan || showFormBE || showScenario || showAuditCheck || showVault || showSpouseDetail || showPaywall;
+    const anyModalOpen = showSettings || showTools || showReceipt || showCatPick || showFilterPick || showScan || showFormBE || showScenario || showAuditCheck || showVault || showSpouseDetail || showPaywall || !!previewImage;
     document.body.style.overflow = anyModalOpen ? "hidden" : "";
     return () => { document.body.style.overflow = ""; };
-  }, [showSettings, showTools, showReceipt, showCatPick, showFilterPick, showScan, showFormBE, showScenario, showAuditCheck, showVault, showSpouseDetail, showPaywall]);
+  }, [showSettings, showTools, showReceipt, showCatPick, showFilterPick, showScan, showFormBE, showScenario, showAuditCheck, showVault, showSpouseDetail, showPaywall, previewImage]);
 
   const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(""), 3500); };
 
@@ -700,7 +701,7 @@ export default function App() {
         <div className="flex justify-between items-center p-6 z-10">
           <div className="flex items-center gap-2">
             <img src="/icons/icon-512.png" alt="Tax Diary" className="w-9 h-9 rounded-xl object-contain bg-white/90 p-0.5" />
-            <span className="text-white font-extrabold text-lg">Tax Diary</span>
+            <img src="/brand/wordmark.png" alt="Tax Diary" className="h-6 w-auto" />
           </div>
           <button onClick={doneOnboard} className="text-gray-300 text-xs font-bold px-3 py-1.5 rounded-full bg-white/10 border border-white/20">Skip</button>
         </div>
@@ -770,7 +771,7 @@ export default function App() {
             <img src="/icons/icon-512.png" alt="Tax Diary" className="w-9 h-9 rounded-xl object-contain" />
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-base font-extrabold text-gray-900">Tax Diary</span>
+                <img src="/brand/wordmark.png" alt="Tax Diary" className="h-5 w-auto" />
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-pink-50 text-pink-700 border border-pink-200">YA {taxYear}</span>
                 {isPro && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-300 flex items-center gap-1"><Crown className="w-3 h-3" /> Plus</span>}
               </div>
@@ -1276,7 +1277,11 @@ export default function App() {
                     return (
                       <div key={r.id} className="py-3 flex items-center justify-between text-xs hover:bg-gray-50/60 transition rounded-xl px-1">
                         <div className="flex items-center gap-3 min-w-0">
-                          {r.image ? <img src={r.image} alt="Receipt" className="w-10 h-10 rounded-xl object-cover border border-gray-200 shrink-0" /> : <div className="w-10 h-10 rounded-xl bg-pink-50 text-pink-700 border border-pink-100 flex items-center justify-center shrink-0"><Receipt className="w-5 h-5" /></div>}
+                          {r.image ? (
+                            <button onClick={() => setPreviewImage({ src: r.image, merchant: r.merchant || "Expense Receipt" })} className="shrink-0">
+                              <img src={r.image} alt="Receipt" className="w-10 h-10 rounded-xl object-cover border border-gray-200" />
+                            </button>
+                          ) : <div className="w-10 h-10 rounded-xl bg-pink-50 text-pink-700 border border-pink-100 flex items-center justify-center shrink-0"><Receipt className="w-5 h-5" /></div>}
                           <div className="min-w-0">
                             <p className="font-extrabold text-gray-800 truncate">{r.merchant || "Expense Receipt"}</p>
                             <div className="flex items-center gap-2 mt-0.5">
@@ -1735,7 +1740,11 @@ export default function App() {
                   <div className="w-full p-3 border-2 border-dashed border-gray-300 rounded-xl flex items-center justify-center gap-2 bg-gray-50 hover:border-pink-400 transition"><Upload className="w-4 h-4 text-gray-400" /><span className="text-gray-500 text-xs">Tap to attach receipt image</span></div>
                   <input type="file" accept="image/*" onChange={handleImage} className="hidden" />
                 </label>
-                {form.image && <img src={form.image} alt="Preview" className="mt-2 max-h-32 rounded-xl border" />}
+                {form.image && (
+                  <button type="button" onClick={() => setPreviewImage({ src: form.image, merchant: form.merchant || "Receipt" })}>
+                    <img src={form.image} alt="Preview" className="mt-2 max-h-32 rounded-xl border" />
+                  </button>
+                )}
               </div>
               <div className="flex gap-2 pt-1">
                 <button onClick={closeReceiptModal} className="flex-1 py-2.5 rounded-xl bg-gray-100 text-gray-700 font-bold">Cancel</button>
@@ -1786,6 +1795,20 @@ export default function App() {
                 ))}
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* Full-size Receipt Image Lightbox — tap any receipt thumbnail to open. High z-index
+          so it layers on top of the Vault list or the Add/Edit Receipt form it was opened from. */}
+      {previewImage && (
+        <div className="fixed inset-0 z-[95] bg-gray-900/90 backdrop-blur-sm flex flex-col" onClick={() => setPreviewImage(null)}>
+          <div className="flex justify-between items-center p-4 shrink-0">
+            <p className="text-white text-sm font-bold truncate pr-3">{previewImage.merchant}</p>
+            <button onClick={() => setPreviewImage(null)} className="p-2 rounded-full bg-white/10 hover:bg-white/20 shrink-0"><X className="w-5 h-5 text-white" /></button>
+          </div>
+          <div className="flex-1 flex items-center justify-center p-4 overflow-auto" onClick={(e) => e.stopPropagation()}>
+            <img src={previewImage.src} alt={previewImage.merchant} className="max-w-full max-h-full rounded-xl object-contain shadow-2xl" />
           </div>
         </div>
       )}
