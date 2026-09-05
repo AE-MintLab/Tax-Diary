@@ -18,7 +18,17 @@ import {
 } from "firebase/auth";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 
-// Turns Firebase's error codes into messages a non-technical user can act on.
+// Turns Firestore's error codes into messages a non-technical user can act on.
+function firestoreErrorMessage(err) {
+  const code = err?.code || "";
+  if (code.includes("permission-denied")) return "Permission denied — the Firestore security rules haven't been published yet (or don't match this account).";
+  if (code.includes("unavailable")) return "Can't reach Firestore right now — check your connection and try again.";
+  if (code.includes("unauthenticated")) return "Not signed in — please sign in again.";
+  if (code.includes("not-found")) return "Firestore database not found — check it's been created in Firebase Console.";
+  if (code.includes("resource-exhausted")) return "Firestore quota reached for today — try again later.";
+  return err?.message || "Unknown Firestore error";
+}
+// Turns Firebase Auth's error codes into messages a non-technical user can act on.
 function authErrorMessage(err) {
   const code = err?.code || "";
   if (code.includes("email-already-in-use")) return "An account with this email already exists — try signing in instead.";
@@ -201,6 +211,7 @@ export default function App() {
   const [authBusy,       setAuthBusy]       = useState(false);
   const [showAuthPassword, setShowAuthPassword] = useState(false);
   const [cloudSyncStatus, setCloudSyncStatus] = useState("idle"); // idle | loading | synced | error
+  const [cloudSyncError,  setCloudSyncError]  = useState("");
   const [lastSyncedAt,   setLastSyncedAt]   = useState("");
   const cloudLoadedForUid = useRef(null); // guards the one-time pull/bootstrap per signed-in session
   const hydrated = useRef(false);
@@ -397,11 +408,13 @@ export default function App() {
           showToast("Cloud backup created ✓");
         }
         setCloudSyncStatus("synced");
+        setCloudSyncError("");
         setLastSyncedAt(new Date().toLocaleTimeString());
       } catch (err) {
         console.error("Firestore load failed:", err);
         setCloudSyncStatus("error");
-        showToast("Couldn't reach cloud — working locally for now");
+        setCloudSyncError(firestoreErrorMessage(err));
+        showToast(`Cloud sync error: ${firestoreErrorMessage(err)}`);
       }
     })();
   }, [isPro, signedIn, authLoading]);
@@ -417,10 +430,12 @@ export default function App() {
       try {
         await setDoc(doc(db, "users", uid), buildCloudSnapshot(), { merge: true });
         setCloudSyncStatus("synced");
+        setCloudSyncError("");
         setLastSyncedAt(new Date().toLocaleTimeString());
       } catch (err) {
         console.error("Firestore save failed:", err);
         setCloudSyncStatus("error");
+        setCloudSyncError(firestoreErrorMessage(err));
       }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1754,7 +1769,7 @@ export default function App() {
                       <div className="bg-white p-3 rounded-xl border border-pink-200 space-y-1">
                         {cloudSyncStatus === "loading" && <p className="text-gray-500 font-semibold flex items-center gap-1.5"><RefreshCw className="w-3.5 h-3.5 animate-spin" /> Syncing…</p>}
                         {cloudSyncStatus === "synced" && <p className="text-emerald-700 font-semibold flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5" /> Synced{lastSyncedAt ? ` · ${lastSyncedAt}` : ""}</p>}
-                        {cloudSyncStatus === "error" && <p className="text-rose-600 font-semibold flex items-center gap-1.5"><AlertTriangle className="w-3.5 h-3.5" /> Couldn't reach cloud — check your connection</p>}
+                        {cloudSyncStatus === "error" && <p className="text-rose-600 font-semibold flex items-start gap-1.5"><AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" /> {cloudSyncError || "Couldn't reach cloud"}</p>}
                         <p className="text-[10px] text-gray-400">Sign in with this same email on any device to pick up your data automatically — no code needed.</p>
                       </div>
                     </div>
