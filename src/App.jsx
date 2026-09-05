@@ -16,7 +16,7 @@ import {
   signOut,
   sendPasswordResetEmail,
 } from "firebase/auth";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc, onSnapshot } from "firebase/firestore";
 
 // Turns Firestore's error codes into messages a non-technical user can act on.
 function firestoreErrorMessage(err) {
@@ -111,7 +111,7 @@ const SLIDES = [
 const DAY = 86400000;
 const YEAR = 365 * DAY;
 const PRICE = 29;
-const DONATION_URL = "https://buymeacoffee.com/YOUR_USERNAME"; // TODO: replace with your real donation link once you've picked a platform (Buy Me a Coffee / Ko-fi / PayPal.me)
+const DONATION_URL = "https://toyyibpay.com/YOUR_OPEN_AMOUNT_BILL_CODE"; // TODO: replace with your real ToyyibPay open-amount payment link (create one from your ToyyibPay dashboard — no code needed, just paste the resulting URL here)
 
 const calcTax  = (inc) => { if (!inc || inc <= 0) return 0; let p = 0; for (const b of BRACKETS) { if (inc <= b.max) return b.base + (inc - p) * b.rate; p = b.max; } return 0; };
 // RM400 personal rebate if chargeable <= RM35,000. An ADDITIONAL RM400 applies on the same
@@ -325,15 +325,32 @@ export default function App() {
   const persistBilling  = async (b) => { setBilling(b); try { await store.set("mc26-billing", JSON.stringify(b)); } catch {} };
 
   // ── Tier / Trial Derived State ──────────────────────────────────────────────
+  // Trial stays local/client-only (unchanged) — it's free, so the stakes of a
+  // determined user faking it locally are low. Paid subscription status is a
+  // different story: cloudBilling comes from Firestore's private/billing path,
+  // which — per firestore.rules — the client can READ but never WRITE. Only
+  // the server-side payment webhook (api/toyyibpay-callback.js, using admin
+  // access) can set it. That's what makes "isSubscribed" trustworthy now
+  // instead of just a local flag anyone could flip in dev tools.
+  const [cloudBilling, setCloudBilling] = useState(null); // { subEnd, lastPaymentAt, lastBillCode } | null
+  useEffect(() => {
+    if (!signedIn) { setCloudBilling(null); return; }
+    const uid = auth.currentUser?.uid;
+    if (!uid) return;
+    const ref = doc(db, "users", uid, "private", "billing");
+    const unsub = onSnapshot(ref, (snap) => setCloudBilling(snap.exists() ? snap.data() : null), (err) => console.error("Billing listener error:", err));
+    return () => unsub();
+  }, [signedIn]);
+
   const trialEnd   = billing.trialStart ? billing.trialStart + 7 * DAY : null;
   const isTrialing = !!(trialEnd && now < trialEnd);
   const trialDaysLeft = isTrialing ? Math.max(1, Math.ceil((trialEnd - now) / DAY)) : 0;
-  const isSubscribed  = !!(billing.subEnd && now < billing.subEnd);
+  const isSubscribed  = !!(cloudBilling?.subEnd && now < cloudBilling.subEnd);
   const isPro = isTrialing || isSubscribed;
-  const daysToRenewal = isSubscribed ? Math.ceil((billing.subEnd - now) / DAY) : null;
+  const daysToRenewal = isSubscribed ? Math.ceil((cloudBilling.subEnd - now) / DAY) : null;
   const showRenewalBanner = isSubscribed && daysToRenewal <= 30;
   const trialJustExpired = !!(trialEnd && now >= trialEnd && !isSubscribed);
-  const subJustExpired = !!(billing.subEnd && now >= billing.subEnd);
+  const subJustExpired = !!(cloudBilling?.subEnd && now >= cloudBilling.subEnd);
 
   const openPaywall = (title, desc, returnTo = null) => {
     setPaywallCtx({ title, desc });
@@ -359,10 +376,34 @@ export default function App() {
     showToast("Plus trial started — 7 days free ✓");
     closePaywall();
   };
+
+  // Real payment flow, replacing the old one-line "just grant Plus" stub.
+  // Requires being signed in, since payment has to be tied to a real account
+  // for the server to know who to credit once ToyyibPay confirms payment.
+  const [paymentLoading, setPaymentLoading] = useState(false);
   const subscribe = async () => {
-    await persistBilling({ ...billing, subEnd: Date.now() + YEAR });
-    showToast(`Subscribed to Plus (RM${PRICE.toFixed(2)}/yr) ✓`);
-    closePaywall();
+    if (!signedIn) {
+      closePaywall();
+      openSettings("sync");
+      showToast("Please sign in first, then tap Subscribe again.");
+      return;
+    }
+    setPaymentLoading(true);
+    try {
+      const idToken = await auth.currentUser.getIdToken();
+      const r = await fetch("/api/create-payment", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ idToken }),
+      });
+      const data = await r.json();
+      if (!r.ok || !data.paymentUrl) throw new Error(data?.error || "Could not start payment");
+      window.location.href = data.paymentUrl; // hand off to ToyyibPay's hosted checkout
+    } catch (err) {
+      console.error("Payment creation failed:", err);
+      showToast(`Payment error: ${err.message}`);
+      setPaymentLoading(false);
+    }
   };
 
   const requireProOrPaywall = (title, desc, returnTo = null) => {
@@ -371,11 +412,42 @@ export default function App() {
     return false;
   };
 
+  // Detects the redirect back from ToyyibPay's checkout (billReturnUrl includes
+  // ?payment=return&status_id=...) and shows an appropriate toast. The actual
+  // Plus activation comes from the server-to-server callback + the Firestore
+  // listener above, not from this redirect itself — this is just user feedback.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.has("payment")) {
+      const statusId = params.get("status_id");
+      if (statusId === "1") showToast("Payment received — activating Plus…");
+      else if (statusId === "3") showToast("Payment failed or was cancelled.");
+      else if (statusId === "2") showToast("Payment pending — this may take a moment.");
+      window.history.replaceState({}, "", window.location.pathname);
+    }
+  }, []);
+
+  // Coerces a single receipt's fields to the plain types Firestore expects,
+  // regardless of where the receipt came from (manual entry, AI scan, an old
+  // local backup, etc.). This is a safety net, not the primary fix — the OCR
+  // handler already validates Gemini's output — but it means one malformed
+  // receipt can never block the ENTIRE cloud sync from succeeding.
+  const sanitizeReceiptForCloud = (r) => ({
+    id: typeof r.id === "number" ? r.id : Date.now(),
+    taxYear: typeof r.taxYear === "number" ? r.taxYear : 2026,
+    category: typeof r.category === "string" ? r.category : "lifestyle",
+    amount: typeof r.amount === "number" && isFinite(r.amount) ? r.amount : 0,
+    merchant: typeof r.merchant === "string" ? r.merchant : "",
+    date: typeof r.date === "string" ? r.date : new Date().toISOString().slice(0, 10),
+    image: typeof r.image === "string" ? r.image : null,
+    owner: ["mine", "spouse", "joint"].includes(r.owner) ? r.owner : "joint",
+  });
+
   // Gathers all profile/income/family/receipt fields into one snapshot object —
   // the same shape as the old local pushDeviceVault snapshot, just written to
   // Firestore now instead of a guessable shared code.
   const buildCloudSnapshot = () => ({
-    receipts, income, otherIncomeAmt, epfAmt, socsoAmt, pcbAmt, zakatAmt, isSelfOKU,
+    receipts: receipts.map(sanitizeReceiptForCloud), income, otherIncomeAmt, epfAmt, socsoAmt, pcbAmt, zakatAmt, isSelfOKU,
     maritalStatus, spouseInc, spouseEpfAmt, spouseSocsoAmt, spousePcbAmt, spouseDisabled,
     spouseName, childU18, childHiEduDegree, childHiEduOther, childDisabled, childDisabledHiEdu,
     homeLoanTier, childrenClaimedBy, clientName, updatedAt: new Date().toISOString(),
@@ -775,9 +847,19 @@ export default function App() {
         });
         const parsed = await response.json();
         if (!response.ok) throw new Error(parsed?.error || "Scan failed");
-        setForm(f => ({ ...f, merchant: parsed.merchant || "Extracted Receipt", amount: parsed.amount ? String(parsed.amount) : "0.00", date: parsed.date || new Date().toISOString().split("T")[0], category: parsed.category || "lifestyle", image: dataUrl, taxYear }));
+        // Gemini's response is only guaranteed to be valid JSON — not necessarily
+        // the exact shape we asked for. Validate each field's TYPE before it
+        // touches app state; an unvalidated field (e.g. category coming back as
+        // an array instead of a plain string) can otherwise flow straight into
+        // Firestore and fail to sync with a "nested array" error.
+        const validCategoryIds = CATS.map(c => c.id);
+        const safeMerchant = typeof parsed.merchant === "string" && parsed.merchant.trim() ? parsed.merchant.trim() : "Extracted Receipt";
+        const safeAmount = (typeof parsed.amount === "number" && isFinite(parsed.amount)) ? String(parsed.amount) : (typeof parsed.amount === "string" && !isNaN(parseFloat(parsed.amount))) ? parsed.amount : "0.00";
+        const safeDate = (typeof parsed.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(parsed.date)) ? parsed.date : new Date().toISOString().split("T")[0];
+        const safeCategory = (typeof parsed.category === "string" && validCategoryIds.includes(parsed.category)) ? parsed.category : "lifestyle";
+        setForm(f => ({ ...f, merchant: safeMerchant, amount: safeAmount, date: safeDate, category: safeCategory, image: dataUrl, taxYear }));
         setShowScan(false); setShowReceipt(true);
-        showToast(`AI Extracted: ${parsed.merchant || "Receipt"} · RM ${parsed.amount || "0"}`);
+        showToast(`AI Extracted: ${safeMerchant} · RM ${safeAmount}`);
       } catch (err) {
         // Honest failure — drop into manual entry with the photo attached rather
         // than silently faking merchant/amount/category.
@@ -1089,7 +1171,7 @@ export default function App() {
               <div className="bg-white rounded-3xl p-5 border border-gray-200 shadow-sm space-y-2">
                 <div className="flex items-center gap-2 font-bold text-sm text-gray-800"><Heart className="w-4 h-4 text-rose-500" /> Just here to support the project?</div>
                 <p className="text-xs text-gray-500 leading-relaxed">No pressure to subscribe — if you'd rather just chip in to keep this app running, that's welcome too. Doesn't unlock anything, just goodwill.</p>
-                <a href={DONATION_URL} target="_blank" rel="noreferrer" className="w-full py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-xs font-extrabold flex items-center justify-center gap-1.5 transition"><Heart className="w-3.5 h-3.5 text-rose-500" /> Buy me a coffee</a>
+                <a href={DONATION_URL} target="_blank" rel="noreferrer" className="w-full py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-xs font-extrabold flex items-center justify-center gap-1.5 transition"><Heart className="w-3.5 h-3.5 text-rose-500" /> Support the Project</a>
               </div>
             )}
 
@@ -1258,11 +1340,11 @@ export default function App() {
               </div>
               {!billing.trialUsed ? (
                 <div className="space-y-2">
-                  <button onClick={startTrial} className="w-full py-3.5 rounded-2xl bg-pink-600 hover:bg-pink-500 text-white font-extrabold transition shadow-md">Start 7-Day Free Trial</button>
-                  <button onClick={subscribe} className="w-full py-2.5 rounded-2xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-xs transition">Skip trial, subscribe now — RM{PRICE.toFixed(2)}/yr</button>
+                  <button onClick={startTrial} disabled={paymentLoading} className="w-full py-3.5 rounded-2xl bg-pink-600 hover:bg-pink-500 disabled:opacity-50 text-white font-extrabold transition shadow-md">Start 7-Day Free Trial</button>
+                  <button onClick={subscribe} disabled={paymentLoading} className="w-full py-2.5 rounded-2xl bg-gray-100 hover:bg-gray-200 disabled:opacity-50 text-gray-700 font-bold text-xs transition">{paymentLoading ? "Redirecting to payment…" : `Skip trial, subscribe now — RM${PRICE.toFixed(2)}/yr`}</button>
                 </div>
               ) : (
-                <button onClick={subscribe} className="w-full py-3.5 rounded-2xl bg-pink-600 hover:bg-pink-500 text-white font-extrabold transition shadow-md">Subscribe to Plus — RM{PRICE.toFixed(2)}/yr</button>
+                <button onClick={subscribe} disabled={paymentLoading} className="w-full py-3.5 rounded-2xl bg-pink-600 hover:bg-pink-500 disabled:opacity-50 text-white font-extrabold transition shadow-md">{paymentLoading ? "Redirecting to payment…" : `Subscribe to Plus — RM${PRICE.toFixed(2)}/yr`}</button>
               )}
               <button onClick={closePaywall} className="w-full py-2.5 rounded-xl bg-white text-gray-500 font-bold text-xs">Continue with Basic (Free) Plan</button>
             </div>
@@ -1731,14 +1813,7 @@ export default function App() {
 
             {settingsTab === "sync" && (
               <div className="space-y-4 text-xs">
-                {!isPro ? (
-                  <div className="p-5 bg-amber-50 border border-amber-200 rounded-2xl text-center space-y-3">
-                    <Lock className="w-6 h-6 text-amber-500 mx-auto" />
-                    <p className="font-bold text-amber-900">Multi-Device Sync is a Plus feature</p>
-                    <p className="text-[11px] text-amber-700">Snap receipts on your phone, then pick up the exact same vault on your laptop at e-Filing time.</p>
-                    <button onClick={() => { setShowSettings(false); openPaywall("Multi-Device Cloud Sync", "Sign in once, then access your vault from any device.", () => openSettings("sync")); }} className="w-full py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold">Unlock Device Sync</button>
-                  </div>
-                ) : authLoading ? (
+                {authLoading ? (
                   <p className="text-gray-400 text-center py-6">Checking sign-in status…</p>
                 ) : !signedIn ? (
                   <div className="p-4 bg-gray-50 rounded-2xl border border-gray-200 space-y-3">
@@ -1746,6 +1821,7 @@ export default function App() {
                       <p className="font-bold text-gray-800 flex items-center gap-1.5"><Mail className="w-4 h-4 text-violet-600" /> {authMode === "signup" ? "Create your account" : "Sign in"}</p>
                       <button onClick={() => { setAuthMode(m => m === "signup" ? "signin" : "signup"); setAuthError(""); }} className="text-violet-700 font-bold underline">{authMode === "signup" ? "Have an account? Sign in" : "New here? Create account"}</button>
                     </div>
+                    <p className="text-[11px] text-gray-500">An account is needed to subscribe to Plus (so payment is tied to you) and to sync your data across devices.</p>
                     <input type="email" value={vaultEmail} onChange={e => setVaultEmail(e.target.value)} placeholder="you@email.com" autoCapitalize="off" autoCorrect="off" className="w-full p-2.5 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-violet-400" />
                     <div className="relative">
                       <input type={showAuthPassword ? "text" : "password"} value={authPassword} onChange={e => setAuthPassword(e.target.value)} placeholder="Password (min. 6 characters)" className="w-full p-2.5 pr-10 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-violet-400" />
@@ -1761,18 +1837,31 @@ export default function App() {
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    <div className="p-4 bg-pink-50 rounded-2xl border border-pink-200 space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="font-extrabold text-sm text-pink-900 flex items-center gap-1.5"><Smartphone className="w-4 h-4" /> Cloud Sync</span>
-                        <span className="text-[10px] bg-pink-200 text-pink-900 px-2 py-0.5 rounded font-bold truncate max-w-[140px]">{vaultEmail}</span>
-                      </div>
-                      <div className="bg-white p-3 rounded-xl border border-pink-200 space-y-1">
-                        {cloudSyncStatus === "loading" && <p className="text-gray-500 font-semibold flex items-center gap-1.5"><RefreshCw className="w-3.5 h-3.5 animate-spin" /> Syncing…</p>}
-                        {cloudSyncStatus === "synced" && <p className="text-emerald-700 font-semibold flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5" /> Synced{lastSyncedAt ? ` · ${lastSyncedAt}` : ""}</p>}
-                        {cloudSyncStatus === "error" && <p className="text-rose-600 font-semibold flex items-start gap-1.5"><AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" /> {cloudSyncError || "Couldn't reach cloud"}</p>}
-                        <p className="text-[10px] text-gray-400">Sign in with this same email on any device to pick up your data automatically — no code needed.</p>
-                      </div>
+                    <div className="p-4 bg-gray-50 rounded-2xl border border-gray-200 flex items-center justify-between">
+                      <p className="font-bold text-gray-800 flex items-center gap-1.5"><Mail className="w-4 h-4 text-violet-600" /> Signed in</p>
+                      <span className="text-[10px] bg-gray-200 text-gray-700 px-2 py-0.5 rounded font-bold truncate max-w-[140px]">{vaultEmail}</span>
                     </div>
+
+                    {!isPro ? (
+                      <div className="p-5 bg-amber-50 border border-amber-200 rounded-2xl text-center space-y-3">
+                        <Lock className="w-6 h-6 text-amber-500 mx-auto" />
+                        <p className="font-bold text-amber-900">Multi-Device Sync is a Plus feature</p>
+                        <p className="text-[11px] text-amber-700">Snap receipts on your phone, then pick up the exact same vault on your laptop at e-Filing time.</p>
+                        <button onClick={() => { setShowSettings(false); openPaywall("Multi-Device Cloud Sync", "Your account's ready — subscribe to enable syncing.", () => openSettings("sync")); }} className="w-full py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold">Unlock Device Sync</button>
+                      </div>
+                    ) : (
+                      <div className="p-4 bg-pink-50 rounded-2xl border border-pink-200 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <span className="font-extrabold text-sm text-pink-900 flex items-center gap-1.5"><Smartphone className="w-4 h-4" /> Cloud Sync</span>
+                        </div>
+                        <div className="bg-white p-3 rounded-xl border border-pink-200 space-y-1">
+                          {cloudSyncStatus === "loading" && <p className="text-gray-500 font-semibold flex items-center gap-1.5"><RefreshCw className="w-3.5 h-3.5 animate-spin" /> Syncing…</p>}
+                          {cloudSyncStatus === "synced" && <p className="text-emerald-700 font-semibold flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5" /> Synced{lastSyncedAt ? ` · ${lastSyncedAt}` : ""}</p>}
+                          {cloudSyncStatus === "error" && <p className="text-rose-600 font-semibold flex items-start gap-1.5"><AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" /> {cloudSyncError || "Couldn't reach cloud"}</p>}
+                          <p className="text-[10px] text-gray-400">Sign in with this same email on any device to pick up your data automatically — no code needed.</p>
+                        </div>
+                      </div>
+                    )}
                     <button onClick={doSignOut} className="w-full py-2.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold flex items-center justify-center gap-1.5"><LogOut className="w-3.5 h-3.5" /> Sign Out</button>
                   </div>
                 )}
