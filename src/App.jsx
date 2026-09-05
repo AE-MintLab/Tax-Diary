@@ -6,8 +6,28 @@ import {
   ExternalLink, ArrowRight, Calendar, Camera, Zap, Smartphone, Laptop,
   Copy, RefreshCw, Link2, ShieldAlert, Crown, Lock, FileText, Clock,
   Mail, LogIn, PieChart, ClipboardCopy, Info, Sliders, ShieldCheck,
-  DollarSign, Home, Briefcase
+  DollarSign, Home, Briefcase, LogOut, Eye, EyeOff
 } from "lucide-react";
+import { auth } from "./firebase";
+import {
+  onAuthStateChanged,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signOut,
+  sendPasswordResetEmail,
+} from "firebase/auth";
+
+// Turns Firebase's error codes into messages a non-technical user can act on.
+function authErrorMessage(err) {
+  const code = err?.code || "";
+  if (code.includes("email-already-in-use")) return "An account with this email already exists — try signing in instead.";
+  if (code.includes("invalid-email")) return "That doesn't look like a valid email address.";
+  if (code.includes("user-not-found") || code.includes("invalid-credential") || code.includes("wrong-password")) return "Incorrect email or password.";
+  if (code.includes("weak-password")) return "Password should be at least 6 characters.";
+  if (code.includes("too-many-requests")) return "Too many attempts — please wait a moment and try again.";
+  if (code.includes("network-request-failed")) return "Network error — check your connection and try again.";
+  return "Something went wrong — please try again.";
+}
 
 // ── Storage Utility (window.storage with localStorage fallback) ───────────────
 const store = {
@@ -171,6 +191,12 @@ export default function App() {
   const [vaultCode,      setVaultCode]      = useState("");
   const [vaultEmail,     setVaultEmail]     = useState("");
   const [signedIn,       setSignedIn]       = useState(false);
+  const [authLoading,    setAuthLoading]    = useState(true); // true until Firebase reports initial auth state
+  const [authMode,       setAuthMode]       = useState("signin"); // "signin" | "signup"
+  const [authPassword,   setAuthPassword]   = useState("");
+  const [authError,      setAuthError]      = useState("");
+  const [authBusy,       setAuthBusy]       = useState(false);
+  const [showAuthPassword, setShowAuthPassword] = useState(false);
   const [vaultCodeInput, setVaultCodeInput] = useState("");
   const [deviceSyncedAt, setDeviceSyncedAt] = useState("");
   const [loadingVault,   setLoadingVault]   = useState(false);
@@ -273,8 +299,9 @@ export default function App() {
       try { const c = await store.get("mc26-vaultcode"); code = c?.value || ""; if (!code) { code = genCode(); await store.set("mc26-vaultcode", code); } } catch { code = genCode(); }
       setVaultCode(code);
 
-      const em = await store.get("mc26-email");
-      if (em?.value) { setVaultEmail(em.value); setSignedIn(true); }
+      // Note: signedIn/vaultEmail are no longer loaded here — they come from
+      // Firebase's onAuthStateChanged listener (see below), which is the real
+      // source of truth for whether someone is actually signed in.
 
       setView(ob?.value ? "home" : "onboard");
       hydrated.current = true;
@@ -351,11 +378,54 @@ export default function App() {
     setSpouseEpfAmt(auto > 0 ? String(auto) : "");
   }, [spouseInc, hasSpouse, spouseEpfTouched]);
 
-  const signIn = async () => {
-    if (!vaultEmail || !vaultEmail.includes("@")) return showToast("Enter a valid email");
-    await store.set("mc26-email", vaultEmail);
-    setSignedIn(true);
-    showToast(`Signed in as ${vaultEmail} (demo mode)`);
+  // ── Real Firebase Authentication ────────────────────────────────────────────
+  // Replaces the old fake signIn() stub, which accepted any string containing
+  // "@" with zero verification. onAuthStateChanged is Firebase's source of
+  // truth for whether someone is really signed in — it fires once on load
+  // with whatever session Firebase already has (or null), and again on every
+  // sign-in/sign-out, so signedIn/vaultEmail always reflect a real session.
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, (user) => {
+      setSignedIn(!!user);
+      setVaultEmail(user?.email || "");
+      setAuthLoading(false);
+    });
+    return () => unsub();
+  }, []);
+
+  const doAuthSubmit = async () => {
+    setAuthError("");
+    if (!vaultEmail || !vaultEmail.includes("@")) return setAuthError("Enter a valid email address.");
+    if (!authPassword || authPassword.length < 6) return setAuthError("Password must be at least 6 characters.");
+    setAuthBusy(true);
+    try {
+      if (authMode === "signup") {
+        await createUserWithEmailAndPassword(auth, vaultEmail, authPassword);
+        showToast("Account created ✓");
+      } else {
+        await signInWithEmailAndPassword(auth, vaultEmail, authPassword);
+        showToast("Signed in ✓");
+      }
+      setAuthPassword("");
+    } catch (err) {
+      setAuthError(authErrorMessage(err));
+    } finally { setAuthBusy(false); }
+  };
+
+  const doSignOut = async () => {
+    try { await signOut(auth); showToast("Signed out"); } catch {}
+  };
+
+  const doPasswordReset = async () => {
+    setAuthError("");
+    if (!vaultEmail || !vaultEmail.includes("@")) return setAuthError("Enter your email address first.");
+    setAuthBusy(true);
+    try {
+      await sendPasswordResetEmail(auth, vaultEmail);
+      showToast(`Password reset email sent to ${vaultEmail}`);
+    } catch (err) {
+      setAuthError(authErrorMessage(err));
+    } finally { setAuthBusy(false); }
   };
 
   const requestLoadVault = async () => {
@@ -1631,24 +1701,40 @@ export default function App() {
                     <p className="text-[11px] text-amber-700">Snap receipts on your phone, then pick up the exact same vault on your laptop at e-Filing time.</p>
                     <button onClick={() => { setShowSettings(false); openPaywall("Multi-Device Cloud Sync", "Sign in once, then access your vault from any device.", () => openSettings("sync")); }} className="w-full py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold">Unlock Device Sync</button>
                   </div>
+                ) : authLoading ? (
+                  <p className="text-gray-400 text-center py-6">Checking sign-in status…</p>
                 ) : !signedIn ? (
                   <div className="p-4 bg-gray-50 rounded-2xl border border-gray-200 space-y-3">
-                    <p className="font-bold text-gray-800 flex items-center gap-1.5"><Mail className="w-4 h-4 text-violet-600" /> Sign in to enable sync</p>
-                    <div className="flex gap-2">
-                      <input type="email" value={vaultEmail} onChange={e => setVaultEmail(e.target.value)} placeholder="you@email.com" className="flex-1 p-2.5 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-violet-400" />
-                      <button onClick={signIn} className="px-4 py-2.5 bg-gray-900 hover:bg-gray-800 text-white font-bold rounded-xl flex items-center gap-1.5"><LogIn className="w-3.5 h-3.5" /> Sign In</button>
+                    <div className="flex items-center justify-between">
+                      <p className="font-bold text-gray-800 flex items-center gap-1.5"><Mail className="w-4 h-4 text-violet-600" /> {authMode === "signup" ? "Create your account" : "Sign in"}</p>
+                      <button onClick={() => { setAuthMode(m => m === "signup" ? "signin" : "signup"); setAuthError(""); }} className="text-violet-700 font-bold underline">{authMode === "signup" ? "Have an account? Sign in" : "New here? Create account"}</button>
                     </div>
+                    <input type="email" value={vaultEmail} onChange={e => setVaultEmail(e.target.value)} placeholder="you@email.com" autoCapitalize="off" autoCorrect="off" className="w-full p-2.5 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-violet-400" />
+                    <div className="relative">
+                      <input type={showAuthPassword ? "text" : "password"} value={authPassword} onChange={e => setAuthPassword(e.target.value)} placeholder="Password (min. 6 characters)" className="w-full p-2.5 pr-10 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-violet-400" />
+                      <button type="button" onClick={() => setShowAuthPassword(v => !v)} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400">{showAuthPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}</button>
+                    </div>
+                    {authError && <p className="text-rose-600 font-semibold bg-rose-50 border border-rose-200 rounded-xl p-2.5">{authError}</p>}
+                    <button onClick={doAuthSubmit} disabled={authBusy} className="w-full py-2.5 bg-gray-900 hover:bg-gray-800 disabled:opacity-50 text-white font-bold rounded-xl flex items-center justify-center gap-1.5">
+                      <LogIn className="w-3.5 h-3.5" /> {authBusy ? "Please wait…" : authMode === "signup" ? "Create Account" : "Sign In"}
+                    </button>
+                    {authMode === "signin" && (
+                      <button onClick={doPasswordReset} disabled={authBusy} className="w-full text-center text-violet-700 font-semibold underline">Forgot password?</button>
+                    )}
                   </div>
                 ) : (
-                  <div className="p-4 bg-pink-50 rounded-2xl border border-pink-200 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="font-extrabold text-sm text-pink-900 flex items-center gap-1.5"><Smartphone className="w-4 h-4" /> Device Vault Code</span>
-                      <span className="text-[10px] bg-pink-200 text-pink-900 px-2 py-0.5 rounded font-bold">{vaultEmail}</span>
+                  <div className="space-y-3">
+                    <div className="p-4 bg-pink-50 rounded-2xl border border-pink-200 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="font-extrabold text-sm text-pink-900 flex items-center gap-1.5"><Smartphone className="w-4 h-4" /> Device Vault Code</span>
+                        <span className="text-[10px] bg-pink-200 text-pink-900 px-2 py-0.5 rounded font-bold truncate max-w-[140px]">{vaultEmail}</span>
+                      </div>
+                      <div className="flex items-center gap-2 bg-white p-3 rounded-xl border border-pink-200 justify-between">
+                        <span className="font-mono text-2xl font-black text-pink-800 tracking-widest">{vaultCode}</span>
+                        <button onClick={copyVaultCode} className="px-3 py-1.5 bg-pink-700 text-white rounded-lg font-bold flex items-center gap-1"><Copy className="w-3.5 h-3.5" /> Copy</button>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2 bg-white p-3 rounded-xl border border-pink-200 justify-between">
-                      <span className="font-mono text-2xl font-black text-pink-800 tracking-widest">{vaultCode}</span>
-                      <button onClick={copyVaultCode} className="px-3 py-1.5 bg-pink-700 text-white rounded-lg font-bold flex items-center gap-1"><Copy className="w-3.5 h-3.5" /> Copy</button>
-                    </div>
+                    <button onClick={doSignOut} className="w-full py-2.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold flex items-center justify-center gap-1.5"><LogOut className="w-3.5 h-3.5" /> Sign Out</button>
                   </div>
                 )}
               </div>
