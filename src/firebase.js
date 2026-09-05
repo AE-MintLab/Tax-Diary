@@ -8,6 +8,7 @@
 // (Stage B), not from hiding this object.
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
+import { getFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: "AIzaSyAso-6uelgaZNrZ_p-vP4LHtI_iGw23TFk",
@@ -20,3 +21,4 @@ const firebaseConfig = {
 
 export const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
+export const db = getFirestore(app);

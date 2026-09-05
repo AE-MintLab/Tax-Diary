@@ -8,7 +8,7 @@ import {
   Mail, LogIn, PieChart, ClipboardCopy, Info, Sliders, ShieldCheck,
   DollarSign, Home, Briefcase, LogOut, Eye, EyeOff
 } from "lucide-react";
-import { auth } from "./firebase";
+import { auth, db } from "./firebase";
 import {
   onAuthStateChanged,
   createUserWithEmailAndPassword,
@@ -16,6 +16,7 @@ import {
   signOut,
   sendPasswordResetEmail,
 } from "firebase/auth";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 
 // Turns Firebase's error codes into messages a non-technical user can act on.
 function authErrorMessage(err) {
@@ -116,7 +117,6 @@ const taxWithRebate = (chg, spouseRebateEligible = false) => {
 const marginalRate = (inc) => { for (const b of BRACKETS) { if (inc <= b.max) return b.rate; } return 0.30; };
 const fmt      = (n, d = 2) => "RM " + Number(n).toLocaleString("en-MY", { minimumFractionDigits: d, maximumFractionDigits: d });
 const blank    = (yr = 2026) => ({ category: "", amount: "", merchant: "", date: new Date().toISOString().slice(0, 10), image: null, taxYear: yr, owner: "joint" });
-const genCode  = () => Math.random().toString(36).substr(2, 6).toUpperCase();
 
 // ── Main App Component ────────────────────────────────────────────────────────
 export default function App() {
@@ -187,8 +187,11 @@ export default function App() {
   const [paywallCtx,  setPaywallCtx]  = useState({ title: "AI Receipt Scanner", desc: "Snap a receipt and let AI fill in the details for you." });
   const [paywallReturnTo, setPaywallReturnTo] = useState(null); // fn to call when paywall is dismissed, to reopen wherever it was triggered from
 
-  // ── Device Sync ─────────────────────────────────────────────────────────────
-  const [vaultCode,      setVaultCode]      = useState("");
+  // ── Account & Cloud Sync ─────────────────────────────────────────────────────
+  // Data now syncs automatically to the signed-in Firebase account (Firestore),
+  // replacing the old manual 6-character "Vault Code" — which never actually
+  // worked outside the artifact sandbox and was, even in the original design,
+  // only as secure as whoever could see/guess the code.
   const [vaultEmail,     setVaultEmail]     = useState("");
   const [signedIn,       setSignedIn]       = useState(false);
   const [authLoading,    setAuthLoading]    = useState(true); // true until Firebase reports initial auth state
@@ -197,10 +200,9 @@ export default function App() {
   const [authError,      setAuthError]      = useState("");
   const [authBusy,       setAuthBusy]       = useState(false);
   const [showAuthPassword, setShowAuthPassword] = useState(false);
-  const [vaultCodeInput, setVaultCodeInput] = useState("");
-  const [deviceSyncedAt, setDeviceSyncedAt] = useState("");
-  const [loadingVault,   setLoadingVault]   = useState(false);
-  const [pendingPull,    setPendingPull]    = useState(null);
+  const [cloudSyncStatus, setCloudSyncStatus] = useState("idle"); // idle | loading | synced | error
+  const [lastSyncedAt,   setLastSyncedAt]   = useState("");
+  const cloudLoadedForUid = useRef(null); // guards the one-time pull/bootstrap per signed-in session
   const hydrated = useRef(false);
 
   useEffect(() => { init(); }, []);
@@ -295,10 +297,6 @@ export default function App() {
       const b = await store.get("mc26-billing");
       if (b?.value) setBilling(JSON.parse(b.value));
 
-      let code = "";
-      try { const c = await store.get("mc26-vaultcode"); code = c?.value || ""; if (!code) { code = genCode(); await store.set("mc26-vaultcode", code); } } catch { code = genCode(); }
-      setVaultCode(code);
-
       // Note: signedIn/vaultEmail are no longer loaded here — they come from
       // Firebase's onAuthStateChanged listener (see below), which is the real
       // source of truth for whether someone is actually signed in.
@@ -362,14 +360,69 @@ export default function App() {
     return false;
   };
 
-  const pushDeviceVault = async () => {
-    if (!isPro || !signedIn || !vaultCode) return;
-    const snapshot = { receipts, income, otherIncomeAmt, epfAmt, socsoAmt, pcbAmt, zakatAmt, isSelfOKU, maritalStatus, spouseInc, spouseEpfAmt, spouseSocsoAmt, spousePcbAmt, spouseDisabled, spouseName, childU18, childHiEduDegree, childHiEduOther, childDisabled, childDisabledHiEdu, homeLoanTier, childrenClaimedBy, clientName, updatedAt: new Date().toISOString() };
-    try { await store.set(`mintcukai-vault:${vaultCode}`, JSON.stringify(snapshot), true); setDeviceSyncedAt(new Date().toLocaleTimeString()); } catch {}
-  };
+  // Gathers all profile/income/family/receipt fields into one snapshot object —
+  // the same shape as the old local pushDeviceVault snapshot, just written to
+  // Firestore now instead of a guessable shared code.
+  const buildCloudSnapshot = () => ({
+    receipts, income, otherIncomeAmt, epfAmt, socsoAmt, pcbAmt, zakatAmt, isSelfOKU,
+    maritalStatus, spouseInc, spouseEpfAmt, spouseSocsoAmt, spousePcbAmt, spouseDisabled,
+    spouseName, childU18, childHiEduDegree, childHiEduOther, childDisabled, childDisabledHiEdu,
+    homeLoanTier, childrenClaimedBy, clientName, updatedAt: new Date().toISOString(),
+  });
+
+  // On sign-in: pull this account's cloud data down (cloud is authoritative once
+  // signed in), or — if this is the very first time this account has signed in
+  // anywhere — push whatever's currently on this device up as the initial backup.
+  useEffect(() => {
+    if (!isPro || !signedIn || authLoading) return;
+    const uid = auth.currentUser?.uid;
+    if (!uid || cloudLoadedForUid.current === uid) return;
+    cloudLoadedForUid.current = uid;
+
+    (async () => {
+      setCloudSyncStatus("loading");
+      try {
+        const ref = doc(db, "users", uid);
+        const snap = await getDoc(ref);
+        if (snap.exists()) {
+          const d = snap.data();
+          setReceipts(d.receipts || []); setIncome(d.income ?? ""); setOtherIncomeAmt(d.otherIncomeAmt ?? "0"); setEpfAmt(d.epfAmt ?? ""); setSocsoAmt(d.socsoAmt ?? "350"); setPcbAmt(d.pcbAmt ?? ""); setZakatAmt(d.zakatAmt ?? "0"); setIsSelfOKU(d.isSelfOKU || false);
+          setMaritalStatus(d.maritalStatus || "single"); setSpouseInc(d.spouseInc ?? ""); setSpouseEpfAmt(d.spouseEpfAmt ?? ""); setSpouseSocsoAmt(d.spouseSocsoAmt ?? "350"); setSpousePcbAmt(d.spousePcbAmt ?? ""); setSpouseDisabled(!!d.spouseDisabled); setSpouseName(d.spouseName || "Spouse"); setChildrenClaimedBy(d.childrenClaimedBy || "mine");
+          if (d.spouseEpfAmt) setSpouseEpfTouched(true);
+          setChildU18(d.childU18 ?? 0); setChildHiEduDegree(d.childHiEduDegree ?? 0); setChildHiEduOther(d.childHiEduOther ?? 0); setChildDisabled(d.childDisabled ?? 0); setChildDisabledHiEdu(d.childDisabledHiEdu ?? 0); setHomeLoanTier(d.homeLoanTier || "under500k");
+          setClientName(d.clientName || "");
+          showToast("Cloud data loaded ✓");
+        } else {
+          await setDoc(ref, buildCloudSnapshot());
+          showToast("Cloud backup created ✓");
+        }
+        setCloudSyncStatus("synced");
+        setLastSyncedAt(new Date().toLocaleTimeString());
+      } catch (err) {
+        console.error("Firestore load failed:", err);
+        setCloudSyncStatus("error");
+        showToast("Couldn't reach cloud — working locally for now");
+      }
+    })();
+  }, [isPro, signedIn, authLoading]);
+
+  // On every relevant change, push up to Firestore — but only after the initial
+  // pull/bootstrap above has completed, so we don't overwrite cloud data with
+  // stale local data during that first load.
   useEffect(() => {
     if (!hydrated.current || !isPro || !signedIn) return;
-    pushDeviceVault();
+    const uid = auth.currentUser?.uid;
+    if (!uid || cloudLoadedForUid.current !== uid) return;
+    (async () => {
+      try {
+        await setDoc(doc(db, "users", uid), buildCloudSnapshot(), { merge: true });
+        setCloudSyncStatus("synced");
+        setLastSyncedAt(new Date().toLocaleTimeString());
+      } catch (err) {
+        console.error("Firestore save failed:", err);
+        setCloudSyncStatus("error");
+      }
+    })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [receipts, income, otherIncomeAmt, epfAmt, socsoAmt, pcbAmt, zakatAmt, isSelfOKU, maritalStatus, spouseInc, spouseEpfAmt, spouseSocsoAmt, spousePcbAmt, spouseDisabled, spouseName, childU18, childHiEduDegree, childHiEduOther, childDisabled, childDisabledHiEdu, homeLoanTier, childrenClaimedBy, clientName, isPro, signedIn]);
   useEffect(() => {
@@ -389,6 +442,7 @@ export default function App() {
       setSignedIn(!!user);
       setVaultEmail(user?.email || "");
       setAuthLoading(false);
+      if (!user) { cloudLoadedForUid.current = null; setCloudSyncStatus("idle"); }
     });
     return () => unsub();
   }, []);
@@ -427,38 +481,6 @@ export default function App() {
       setAuthError(authErrorMessage(err));
     } finally { setAuthBusy(false); }
   };
-
-  const requestLoadVault = async () => {
-    const code = vaultCodeInput.trim().toUpperCase();
-    if (code.length < 4) return showToast("Enter the 6-character Vault Code from your other device");
-    setLoadingVault(true);
-    try {
-      const r = await store.get(`mintcukai-vault:${code}`, true);
-      setLoadingVault(false);
-      if (!r?.value) return showToast("No vault found for that code");
-      setPendingPull(code);
-    } catch { setLoadingVault(false); showToast("Couldn't reach cloud vault"); }
-  };
-  const confirmLoadVault = async () => {
-    const code = pendingPull; if (!code) return;
-    setLoadingVault(true);
-    try {
-      const r = await store.get(`mintcukai-vault:${code}`, true);
-      if (!r?.value) { showToast("Vault no longer available"); setLoadingVault(false); setPendingPull(null); return; }
-      const d = JSON.parse(r.value);
-      setReceipts(d.receipts || []); setIncome(d.income ?? ""); setOtherIncomeAmt(d.otherIncomeAmt ?? "0"); setEpfAmt(d.epfAmt ?? ""); setSocsoAmt(d.socsoAmt ?? "350"); setZakatAmt(d.zakatAmt ?? "0"); setIsSelfOKU(d.isSelfOKU || false);
-      setMaritalStatus(d.maritalStatus || (d.hasSpouse ? "married" : "single")); setSpouseInc(d.spouseInc ?? ""); setSpouseDisabled(!!d.spouseDisabled); setSpouseName(d.spouseName || "Spouse"); setPcbAmt(d.pcbAmt ?? ""); setSpouseEpfAmt(d.spouseEpfAmt ?? ""); setSpouseSocsoAmt(d.spouseSocsoAmt ?? "350"); setSpousePcbAmt(d.spousePcbAmt ?? ""); setChildrenClaimedBy(d.childrenClaimedBy || "mine"); if (d.spouseEpfAmt) setSpouseEpfTouched(true);
-      setChildU18(d.childU18 ?? 0); setChildHiEduDegree(d.childHiEduDegree ?? d.childHiEdu ?? 0); setChildHiEduOther(d.childHiEduOther ?? 0); setChildDisabled(d.childDisabled ?? 0); setChildDisabledHiEdu(d.childDisabledHiEdu ?? 0); setHomeLoanTier(d.homeLoanTier || "under500k");
-      setClientName(d.clientName || "");
-      await store.set("mc26-receipts", JSON.stringify(d.receipts || []));
-      await store.set("mc26-income", JSON.stringify({ income: d.income, otherIncomeAmt: d.otherIncomeAmt, epf: d.epfAmt, socsoAmt: d.socsoAmt, pcbAmt: d.pcbAmt, zakatAmt: d.zakatAmt, isSelfOKU: d.isSelfOKU, maritalStatus: d.maritalStatus, spouseInc: d.spouseInc, spouseEpfAmt: d.spouseEpfAmt, spouseSocsoAmt: d.spouseSocsoAmt, spousePcbAmt: d.spousePcbAmt, spouseDisabled: d.spouseDisabled, spouseName: d.spouseName, childU18: d.childU18, childHiEduDegree: d.childHiEduDegree, childHiEduOther: d.childHiEduOther, childDisabled: d.childDisabled, childDisabledHiEdu: d.childDisabledHiEdu, homeLoanTier: d.homeLoanTier, childrenClaimedBy: d.childrenClaimedBy }));
-      await store.set("mc26-settings", JSON.stringify({ clientName: d.clientName }));
-      await store.set("mc26-vaultcode", code);
-      setVaultCode(code); setVaultCodeInput(""); setDeviceSyncedAt(new Date().toLocaleTimeString());
-      showToast(`Loaded vault ${code} onto this device ✓`);
-    } catch { showToast("Couldn't load that vault"); } finally { setLoadingVault(false); setPendingPull(null); }
-  };
-  const copyVaultCode = () => { try { navigator.clipboard?.writeText(vaultCode); showToast(`Code ${vaultCode} copied ✓`); } catch { showToast(`Your code is ${vaultCode}`); } };
 
   // ── Computed Stats & Calculations ──────────────────────────────────────────
   const activeR  = useMemo(() => receipts.filter(r => (r.taxYear || 2026) === taxYear), [receipts, taxYear]);
@@ -706,7 +728,7 @@ export default function App() {
   const saveAll = async () => { await persistSettings(); await persistIncome(); showToast("Profile saved ✓"); closeSettings(); };
   const openSettings = (tab = "user", returnTo = null) => { setSettingsTab(tab); setShowTools(false); setShowPaywall(false); setSettingsReturnTo(() => returnTo); setShowSettings(true); };
   const closeSettings = () => {
-    setShowSettings(false); setPendingPull(null);
+    setShowSettings(false);
     const fn = settingsReturnTo; setSettingsReturnTo(null); if (fn) fn();
   };
   const openVault = (returnTo = null) => { setVaultReturnTo(() => returnTo); setShowVault(true); };
@@ -1498,7 +1520,7 @@ export default function App() {
 
             <div className="grid grid-cols-3 sm:grid-cols-5 bg-gray-100 p-1 rounded-2xl border border-gray-200 text-[11px] font-bold gap-1">
               {[["user", "👤 Profile"], ["income", "🧮 Income"], ["spouse", "❤️ Spouse"], ["audit", "🗂️ Vault"], ["sync", "📱 Devices"]].map(([tab, label]) => (
-                <button key={tab} onClick={() => { setSettingsTab(tab); setPendingPull(null); }} className={`py-2 rounded-xl transition ${settingsTab === tab ? "bg-white text-pink-700 shadow-sm" : "text-gray-600 hover:text-gray-900"}`}>{label}</button>
+                <button key={tab} onClick={() => setSettingsTab(tab)} className={`py-2 rounded-xl transition ${settingsTab === tab ? "bg-white text-pink-700 shadow-sm" : "text-gray-600 hover:text-gray-900"}`}>{label}</button>
               ))}
             </div>
 
@@ -1726,12 +1748,14 @@ export default function App() {
                   <div className="space-y-3">
                     <div className="p-4 bg-pink-50 rounded-2xl border border-pink-200 space-y-3">
                       <div className="flex items-center justify-between">
-                        <span className="font-extrabold text-sm text-pink-900 flex items-center gap-1.5"><Smartphone className="w-4 h-4" /> Device Vault Code</span>
+                        <span className="font-extrabold text-sm text-pink-900 flex items-center gap-1.5"><Smartphone className="w-4 h-4" /> Cloud Sync</span>
                         <span className="text-[10px] bg-pink-200 text-pink-900 px-2 py-0.5 rounded font-bold truncate max-w-[140px]">{vaultEmail}</span>
                       </div>
-                      <div className="flex items-center gap-2 bg-white p-3 rounded-xl border border-pink-200 justify-between">
-                        <span className="font-mono text-2xl font-black text-pink-800 tracking-widest">{vaultCode}</span>
-                        <button onClick={copyVaultCode} className="px-3 py-1.5 bg-pink-700 text-white rounded-lg font-bold flex items-center gap-1"><Copy className="w-3.5 h-3.5" /> Copy</button>
+                      <div className="bg-white p-3 rounded-xl border border-pink-200 space-y-1">
+                        {cloudSyncStatus === "loading" && <p className="text-gray-500 font-semibold flex items-center gap-1.5"><RefreshCw className="w-3.5 h-3.5 animate-spin" /> Syncing…</p>}
+                        {cloudSyncStatus === "synced" && <p className="text-emerald-700 font-semibold flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5" /> Synced{lastSyncedAt ? ` · ${lastSyncedAt}` : ""}</p>}
+                        {cloudSyncStatus === "error" && <p className="text-rose-600 font-semibold flex items-center gap-1.5"><AlertTriangle className="w-3.5 h-3.5" /> Couldn't reach cloud — check your connection</p>}
+                        <p className="text-[10px] text-gray-400">Sign in with this same email on any device to pick up your data automatically — no code needed.</p>
                       </div>
                     </div>
                     <button onClick={doSignOut} className="w-full py-2.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold flex items-center justify-center gap-1.5"><LogOut className="w-3.5 h-3.5" /> Sign Out</button>
