@@ -443,14 +443,51 @@ export default function App() {
     owner: ["mine", "spouse", "joint"].includes(r.owner) ? r.owner : "joint",
   });
 
+  // Forces any value to a plain string/number scalar, rejecting arrays and
+  // objects outright. Used below on every profile/income field — not just
+  // receipts — since the "invalid nested entity" error persisted even with
+  // receipts fully sanitized, meaning the bad value was very likely sitting
+  // in one of these OTHER fields (probably corrupted during an early sync
+  // attempt before any sanitization existed) and getting read back down and
+  // pushed right back up unchanged on every sign-in since.
+  const sanitizeScalar = (v, fallback) => {
+    if (Array.isArray(v) || (v !== null && typeof v === "object")) return fallback;
+    return v === undefined || v === null ? fallback : v;
+  };
+  const sanitizeBool = (v, fallback) => typeof v === "boolean" ? v : fallback;
+  const sanitizeNum = (v, fallback) => typeof v === "number" && isFinite(v) ? v : fallback;
+
   // Gathers all profile/income/family/receipt fields into one snapshot object —
   // the same shape as the old local pushDeviceVault snapshot, just written to
-  // Firestore now instead of a guessable shared code.
+  // Firestore now instead of a guessable shared code. Every field is coerced
+  // to a safe plain type — never trusting that in-memory state is already
+  // clean, since it may have been populated from a previously-corrupted
+  // cloud read.
   const buildCloudSnapshot = () => ({
-    receipts: receipts.map(sanitizeReceiptForCloud), income, otherIncomeAmt, epfAmt, socsoAmt, pcbAmt, zakatAmt, isSelfOKU,
-    maritalStatus, spouseInc, spouseEpfAmt, spouseSocsoAmt, spousePcbAmt, spouseDisabled,
-    spouseName, childU18, childHiEduDegree, childHiEduOther, childDisabled, childDisabledHiEdu,
-    homeLoanTier, childrenClaimedBy, clientName, updatedAt: new Date().toISOString(),
+    receipts: receipts.map(sanitizeReceiptForCloud),
+    income: sanitizeScalar(income, ""),
+    otherIncomeAmt: sanitizeScalar(otherIncomeAmt, "0"),
+    epfAmt: sanitizeScalar(epfAmt, ""),
+    socsoAmt: sanitizeScalar(socsoAmt, "350"),
+    pcbAmt: sanitizeScalar(pcbAmt, ""),
+    zakatAmt: sanitizeScalar(zakatAmt, "0"),
+    isSelfOKU: sanitizeBool(isSelfOKU, false),
+    maritalStatus: sanitizeScalar(maritalStatus, "single"),
+    spouseInc: sanitizeScalar(spouseInc, ""),
+    spouseEpfAmt: sanitizeScalar(spouseEpfAmt, ""),
+    spouseSocsoAmt: sanitizeScalar(spouseSocsoAmt, "350"),
+    spousePcbAmt: sanitizeScalar(spousePcbAmt, ""),
+    spouseDisabled: sanitizeBool(spouseDisabled, false),
+    spouseName: sanitizeScalar(spouseName, "Spouse"),
+    childU18: sanitizeNum(childU18, 0),
+    childHiEduDegree: sanitizeNum(childHiEduDegree, 0),
+    childHiEduOther: sanitizeNum(childHiEduOther, 0),
+    childDisabled: sanitizeNum(childDisabled, 0),
+    childDisabledHiEdu: sanitizeNum(childDisabledHiEdu, 0),
+    homeLoanTier: sanitizeScalar(homeLoanTier, "under500k"),
+    childrenClaimedBy: sanitizeScalar(childrenClaimedBy, "mine"),
+    clientName: sanitizeScalar(clientName, ""),
+    updatedAt: new Date().toISOString(),
   });
 
   // On sign-in: pull this account's cloud data down (cloud is authoritative once
@@ -484,6 +521,10 @@ export default function App() {
         setLastSyncedAt(new Date().toLocaleTimeString());
       } catch (err) {
         console.error("Firestore load failed:", err);
+        console.error("[cloudSync] snapshot that failed to write:", JSON.stringify({
+          ...buildCloudSnapshot(),
+          receipts: buildCloudSnapshot().receipts.map(r => ({ ...r, image: r.image ? `[${r.image.length} chars omitted]` : null })),
+        }, null, 2));
         setCloudSyncStatus("error");
         setCloudSyncError(firestoreErrorMessage(err));
         showToast(`Cloud sync error: ${firestoreErrorMessage(err)}`);
@@ -506,6 +547,10 @@ export default function App() {
         setLastSyncedAt(new Date().toLocaleTimeString());
       } catch (err) {
         console.error("Firestore save failed:", err);
+        console.error("[cloudSync] snapshot that failed to write:", JSON.stringify({
+          ...buildCloudSnapshot(),
+          receipts: buildCloudSnapshot().receipts.map(r => ({ ...r, image: r.image ? `[${r.image.length} chars omitted]` : null })),
+        }, null, 2));
         setCloudSyncStatus("error");
         setCloudSyncError(firestoreErrorMessage(err));
       }
