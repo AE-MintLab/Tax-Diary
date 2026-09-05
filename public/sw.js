@@ -1,7 +1,7 @@
 // Tax Diary service worker — plain hand-written SW (no Workbox/vite-plugin-pwa
 // dependency). Bump CACHE_VERSION whenever you ship a new build so old
 // caches get cleared out.
-const CACHE_VERSION = "tax-diary-v2";
+const CACHE_VERSION = "tax-diary-v3";
 const APP_SHELL = [
   "/",
   "/manifest.json",
@@ -31,13 +31,38 @@ self.addEventListener("activate", (event) => {
   self.clients.claim();
 });
 
-// Strategy: stale-while-revalidate for same-origin GET requests.
-// Serves from cache instantly if available, and updates the cache
-// in the background from the network. Falls back to cache on
-// network failure (offline).
+// Strategy split in two:
+//
+// 1. HTML navigations (loading the app itself): NETWORK-FIRST, falling back
+//    to cache only if offline. This matters because Vite gives every build's
+//    JS/CSS files unique hashed names — if we served a STALE cached HTML page
+//    after a new deployment, it would reference last build's hashed filenames,
+//    which no longer exist on the server (Vercel only serves the latest
+//    deployment's files), causing a broken/blank app until a second reload.
+//    Network-first means: online → always get the current build; offline →
+//    fall back to whatever was last cached, so the app still opens.
+//
+// 2. Everything else (JS/CSS/images/icons): stale-while-revalidate. These are
+//    safe to serve from cache instantly since each build's filenames are
+//    unique/immutable — a cached JS chunk never goes stale in a way that
+//    matters, since a new build simply requests a different filename.
 self.addEventListener("fetch", (event) => {
   const { request } = event;
   if (request.method !== "GET" || new URL(request.url).origin !== self.location.origin) {
+    return;
+  }
+
+  if (request.mode === "navigate") {
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          if (response && response.status === 200) {
+            caches.open(CACHE_VERSION).then((cache) => cache.put(request, response.clone()));
+          }
+          return response;
+        })
+        .catch(() => caches.open(CACHE_VERSION).then((cache) => cache.match(request)).then((cached) => cached || caches.match("/")))
+    );
     return;
   }
 
