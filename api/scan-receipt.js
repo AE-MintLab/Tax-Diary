@@ -10,6 +10,38 @@
 // Vercel auto-detects any file in /api as a serverless function — no
 // extra config needed, this just needs to exist at this path.
 
+const GEMINI_URL_BASE = "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=";
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+// Gemini's shared infrastructure occasionally returns 503 ("model is
+// overloaded") or 429 (rate limited) even with a valid key and healthy quota —
+// this is well-documented as a transient, server-side condition, and Google's
+// own troubleshooting guidance is to retry with backoff.
+//
+// Kept to ONE retry (2 attempts total, short backoff): Vercel's Hobby plan
+// hard-caps serverless functions at 10 seconds with no way to raise it, so
+// piling on more retries risks causing a worse failure — a hard function
+// timeout — in exchange for smoothing over an already-rare error.
+async function callGeminiWithRetry(apiKey, body, maxAttempts = 2) {
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    const res = await fetch(GEMINI_URL_BASE + apiKey, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+
+    if (res.ok) return res;
+
+    const status = res.status;
+    const isRetryable = status === 503 || status === 429;
+    if (!isRetryable || attempt === maxAttempts) return res; // give up — caller handles the error response
+
+    const errText = await res.text().catch(() => "");
+    console.warn(`[scan-receipt] Gemini ${status} on attempt ${attempt}/${maxAttempts}, retrying in 600ms:`, errText);
+    await sleep(600);
+  }
+}
+
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
@@ -32,32 +64,23 @@ export default async function handler(req, res) {
   const promptText = `Extract this Malaysian purchase receipt as JSON: {"merchant":"string","amount":number,"date":"YYYY-MM-DD","category":"one of: lifestyle, med_self, med_vaccination, med_dental, med_checkup, med_par, sports, edu_fees, edu_skills, med_ins, life_ins, tourism, childcare, sspn, epf, ev_green, home_loan, dis_child, dis_equip, breastfeed"}. Include CCTV, food waste grinders, transit centres, theme parks, NPRA-registered vaccines, dental. Return ONLY raw JSON. Today: ${new Date().toISOString().slice(0, 10)}.`;
 
   try {
-    const geminiRes = await fetch(
-      // gemini-2.5-flash-preview-09-2025 (the original hardcoded model) was
-      // retired by Google on Feb 17, 2026 — that's why scans were failing.
-      // Using the "-latest" alias means Google keeps this pointed at a
-      // current Flash model automatically, so it won't silently die again
-      // the next time a specific dated preview gets retired.
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [
-            {
-              role: "user",
-              parts: [{ text: promptText }, { inlineData: { mimeType, data: base64Data } }],
-            },
-          ],
-          generationConfig: { responseMimeType: "application/json" },
-        }),
-      }
-    );
+    const geminiRes = await callGeminiWithRetry(apiKey, {
+      contents: [
+        {
+          role: "user",
+          parts: [{ text: promptText }, { inlineData: { mimeType, data: base64Data } }],
+        },
+      ],
+      generationConfig: { responseMimeType: "application/json" },
+    });
 
     if (!geminiRes.ok) {
       const errText = await geminiRes.text();
-      console.error(`[scan-receipt] Gemini API returned ${geminiRes.status}:`, errText);
-      return res.status(502).json({ error: `Gemini API call failed (${geminiRes.status})`, detail: errText });
+      console.error(`[scan-receipt] Gemini API returned ${geminiRes.status} after retries:`, errText);
+      const friendly = geminiRes.status === 503
+        ? "Google's AI service is temporarily overloaded — this usually clears up within a minute or two. Please try again shortly."
+        : `Gemini API call failed (${geminiRes.status})`;
+      return res.status(502).json({ error: friendly, detail: errText });
     }
 
     const data = await geminiRes.json();
