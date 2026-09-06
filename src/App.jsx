@@ -185,10 +185,10 @@ export default function App() {
   const touchX = useRef(null);
 
   // ── Scenario Modeling state (Side Hustle / Sole Prop & Rental) ──────────────
-  const [sideHustleInc, setSideHustleInc] = useState("18000");
-  const [sideHustleExp, setSideHustleExp] = useState("4500");
-  const [rentalInc,     setRentalInc]     = useState("14400");
-  const [rentalExp,     setRentalExp]     = useState("3200");
+  const [sideHustleInc, setSideHustleInc] = useState("");
+  const [sideHustleExp, setSideHustleExp] = useState("");
+  const [rentalInc,     setRentalInc]     = useState("");
+  const [rentalExp,     setRentalExp]     = useState("");
 
   // ── Billing / Trial State ───────────────────────────────────────────────────
   const [billing, setBilling] = useState({ trialUsed: false, trialStart: null, subEnd: null });
@@ -213,7 +213,8 @@ export default function App() {
   const [cloudSyncStatus, setCloudSyncStatus] = useState("idle"); // idle | loading | synced | error
   const [cloudSyncError,  setCloudSyncError]  = useState("");
   const [lastSyncedAt,   setLastSyncedAt]   = useState("");
-  const cloudLoadedForUid = useRef(null); // guards the one-time pull/bootstrap per signed-in session
+  const cloudPullStarted  = useRef(null); // uid we've STARTED pulling for (prevents duplicate concurrent pulls)
+  const cloudPullComplete = useRef(null); // uid we've actually FINISHED pulling for (gates the push effect)
   const hydrated = useRef(false);
 
   useEffect(() => { init(); }, []);
@@ -493,11 +494,19 @@ export default function App() {
   // On sign-in: pull this account's cloud data down (cloud is authoritative once
   // signed in), or — if this is the very first time this account has signed in
   // anywhere — push whatever's currently on this device up as the initial backup.
+  //
+  // IMPORTANT: cloudPullStarted is set synchronously (prevents a second overlapping
+  // pull firing before the first one's async work finishes), but the PUSH effect
+  // below gates on cloudPullComplete instead — set only once the cloud data has
+  // actually been read and applied to local state. Gating the push on "started"
+  // instead of "completed" was a real bug: it let the push effect fire with
+  // still-blank pre-pull local state and overwrite real cloud data before the
+  // pull had a chance to finish — exactly what caused cleared-cache data loss.
   useEffect(() => {
     if (!isPro || !signedIn || authLoading) return;
     const uid = auth.currentUser?.uid;
-    if (!uid || cloudLoadedForUid.current === uid) return;
-    cloudLoadedForUid.current = uid;
+    if (!uid || cloudPullStarted.current === uid) return;
+    cloudPullStarted.current = uid;
 
     (async () => {
       setCloudSyncStatus("loading");
@@ -519,6 +528,7 @@ export default function App() {
         setCloudSyncStatus("synced");
         setCloudSyncError("");
         setLastSyncedAt(new Date().toLocaleTimeString());
+        cloudPullComplete.current = uid; // only NOW is it safe for the push effect to run
       } catch (err) {
         console.error("Firestore load failed:", err);
         console.error("[cloudSync] snapshot that failed to write:", JSON.stringify({
@@ -528,17 +538,20 @@ export default function App() {
         setCloudSyncStatus("error");
         setCloudSyncError(firestoreErrorMessage(err));
         showToast(`Cloud sync error: ${firestoreErrorMessage(err)}`);
+        // Deliberately NOT setting cloudPullComplete here — if the pull failed,
+        // we do not want the push effect waking up and writing (possibly blank
+        // or stale) local state over whatever's actually in the cloud.
       }
     })();
   }, [isPro, signedIn, authLoading]);
 
   // On every relevant change, push up to Firestore — but only after the initial
-  // pull/bootstrap above has completed, so we don't overwrite cloud data with
-  // stale local data during that first load.
+  // pull/bootstrap above has ACTUALLY completed (not just started), so we never
+  // overwrite real cloud data with stale/blank local data during that first load.
   useEffect(() => {
     if (!hydrated.current || !isPro || !signedIn) return;
     const uid = auth.currentUser?.uid;
-    if (!uid || cloudLoadedForUid.current !== uid) return;
+    if (!uid || cloudPullComplete.current !== uid) return;
     (async () => {
       try {
         await setDoc(doc(db, "users", uid), buildCloudSnapshot(), { merge: true });
@@ -574,10 +587,35 @@ export default function App() {
       setSignedIn(!!user);
       setVaultEmail(user?.email || "");
       setAuthLoading(false);
-      if (!user) { cloudLoadedForUid.current = null; setCloudSyncStatus("idle"); }
+      if (!user) {
+        cloudPullStarted.current = null;
+        cloudPullComplete.current = null;
+        setCloudSyncStatus("idle");
+      }
     });
     return () => unsub();
   }, []);
+
+  // Resets every profile/income/family/receipt field back to a genuinely blank
+  // state, and clears the local storage cache too. Called on sign-out so that,
+  // on a shared device, the NEXT person to sign in never has your leftover
+  // local data silently attached to their account (which could otherwise
+  // happen via the first-time-sign-in bootstrap-push in the pull effect above).
+  // Note: this only helps if whoever's done using the app actually taps "Sign
+  // Out" first — like any browser-based local storage, handing an unlocked,
+  // still-signed-in device to someone else bypasses this entirely.
+  const resetLocalStateToBlank = async () => {
+    setReceipts([]); setIncome(""); setOtherIncomeAmt("0"); setEpfAmt(""); setPcbAmt(""); setSocsoAmt("350"); setZakatAmt("0"); setIsSelfOKU(false);
+    setMaritalStatus("single"); setSpouseInc(""); setSpouseEpfAmt(""); setSpouseEpfTouched(false); setSpouseSocsoAmt("350"); setSpousePcbAmt(""); setSpouseDisabled(false); setSpouseName("Spouse"); setChildrenClaimedBy("mine");
+    setChildU18(0); setChildHiEduDegree(0); setChildHiEduOther(0); setChildDisabled(0); setChildDisabledHiEdu(0); setHomeLoanTier("under500k");
+    setClientName("");
+    setSideHustleInc(""); setSideHustleExp(""); setRentalInc(""); setRentalExp("");
+    try {
+      await store.set("mc26-receipts", JSON.stringify([]));
+      await store.set("mc26-income", JSON.stringify({}));
+      await store.set("mc26-settings", JSON.stringify({ clientName: "" }));
+    } catch {}
+  };
 
   const doAuthSubmit = async () => {
     setAuthError("");
@@ -599,7 +637,11 @@ export default function App() {
   };
 
   const doSignOut = async () => {
-    try { await signOut(auth); showToast("Signed out"); } catch {}
+    try {
+      await signOut(auth);
+      await resetLocalStateToBlank();
+      showToast("Signed out — local data cleared on this device");
+    } catch {}
   };
 
   const doPasswordReset = async () => {
