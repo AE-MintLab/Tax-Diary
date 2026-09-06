@@ -299,7 +299,7 @@ export default function App() {
       const i = await store.get("mc26-income");
       if (i?.value) {
         const p = JSON.parse(i.value);
-        setIncome(p.income || ""); setOtherIncomeAmt(p.otherIncomeAmt || "0"); setEpfAmt(p.epf || ""); setSocsoAmt(p.socsoAmt || ""); setZakatAmt(p.zakatAmt || "0"); setIsSelfOKU(p.isSelfOKU || false);
+        setIncome(p.income || ""); setOtherIncomeAmt(p.otherIncomeAmt || "0"); setEpfAmt(p.epf || ""); setSocsoAmt(p.socsoAmt || "350"); setZakatAmt(p.zakatAmt || "0"); setIsSelfOKU(p.isSelfOKU || false);
         setMaritalStatus(p.maritalStatus || (p.hasSpouse ? "married" : "single")); setSpouseInc(p.spouseInc || ""); setSpouseDisabled(p.spouseDisabled || false); setSpouseName(p.spouseName || "Spouse"); setPcbAmt(p.pcbAmt || ""); setSpouseEpfAmt(p.spouseEpfAmt || ""); setSpouseSocsoAmt(p.spouseSocsoAmt || "350"); setSpousePcbAmt(p.spousePcbAmt || ""); setChildrenClaimedBy(p.childrenClaimedBy || "mine"); if (p.spouseEpfAmt) setSpouseEpfTouched(true);
         setChildU18(p.childU18 || 0); setChildHiEduDegree(p.childHiEduDegree ?? p.childHiEdu ?? 0); setChildHiEduOther(p.childHiEduOther || 0); setChildDisabled(p.childDisabled || 0); setChildDisabledHiEdu(p.childDisabledHiEdu || 0); setHomeLoanTier(p.homeLoanTier || "under500k");
       }
@@ -406,6 +406,34 @@ export default function App() {
       showToast(`Payment error: ${err.message}`);
       setPaymentLoading(false);
     }
+  };
+
+  const [redeemInput, setRedeemInput] = useState("");
+  const [redeemBusy, setRedeemBusy] = useState(false);
+  const redeemCode = async () => {
+    if (!signedIn) {
+      closePaywall();
+      openSettings("sync");
+      showToast("Please sign in first, then try your code again.");
+      return;
+    }
+    if (!redeemInput.trim()) return showToast("Enter a code first.");
+    setRedeemBusy(true);
+    try {
+      const idToken = await auth.currentUser.getIdToken();
+      const r = await fetch("/api/redeem-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ idToken, code: redeemInput.trim() }),
+      });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data?.error || "That code didn't work");
+      showToast("Plus unlocked ✓");
+      setRedeemInput("");
+      closePaywall();
+    } catch (err) {
+      showToast(err.message);
+    } finally { setRedeemBusy(false); }
   };
 
   const requireProOrPaywall = (title, desc, returnTo = null) => {
@@ -1442,7 +1470,20 @@ export default function App() {
               {isTrialing ? (
                 <p className="text-center text-[11px] text-gray-400">Your free trial is active for {trialDaysLeft} more day{trialDaysLeft !== 1 ? "s" : ""} — subscribe anytime to keep Plus after it ends.</p>
               ) : (
-                <button onClick={closePaywall} className="w-full py-2.5 rounded-xl bg-white text-gray-500 font-bold text-xs">Continue with Basic (Free) Plan</button>
+                <>
+                  <div className="flex gap-2 pt-1">
+                    <input
+                      type="text"
+                      value={redeemInput}
+                      onChange={(e) => setRedeemInput(e.target.value)}
+                      placeholder="Have a code?"
+                      autoCapitalize="characters"
+                      className="flex-1 p-2.5 rounded-xl border border-gray-200 text-xs font-semibold outline-none focus:ring-2 focus:ring-violet-400"
+                    />
+                    <button onClick={redeemCode} disabled={redeemBusy} className="px-4 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white font-bold text-xs">{redeemBusy ? "…" : "Redeem"}</button>
+                  </div>
+                  <button onClick={closePaywall} className="w-full py-2.5 rounded-xl bg-white text-gray-500 font-bold text-xs">Continue with Basic (Free) Plan</button>
+                </>
               )}
             </div>
           </div>
