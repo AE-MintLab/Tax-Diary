@@ -138,7 +138,7 @@ export default function App() {
   const [otherIncomeAmt, setOtherIncomeAmt] = useState("0");
   const [epfAmt,       setEpfAmt]       = useState("");
   const [pcbAmt,       setPcbAmt]       = useState("");
-  const [socsoAmt,     setSocsoAmt]     = useState("350");
+  const [socsoAmt,     setSocsoAmt]     = useState("");
   const [zakatAmt,     setZakatAmt]     = useState("0");
   const [isSelfOKU,    setIsSelfOKU]    = useState(false);
   const [maritalStatus, setMaritalStatus] = useState("single"); // "single" | "married" — set under Profile
@@ -146,7 +146,7 @@ export default function App() {
   const [spouseInc,    setSpouseInc]    = useState("");
   const [spouseEpfAmt, setSpouseEpfAmt] = useState("");
   const [spouseEpfTouched, setSpouseEpfTouched] = useState(false);
-  const [spouseSocsoAmt, setSpouseSocsoAmt] = useState("350");
+  const [spouseSocsoAmt, setSpouseSocsoAmt] = useState("");
   const [spousePcbAmt, setSpousePcbAmt] = useState("");
   const [spouseName,   setSpouseName]   = useState("Spouse");
   const [spouseDisabled, setSpouseDisabled] = useState(false);
@@ -179,6 +179,7 @@ export default function App() {
   const [receiptReturnTo, setReceiptReturnTo] = useState(null); // fn to call when the Add/Edit Receipt form is dismissed
   const [showFilterPick, setShowFilterPick] = useState(false); // custom category-filter picker for the Vault list (replaces native <select>)
   const [showSpouseDetail, setShowSpouseDetail] = useState(false);
+  const [showDonate, setShowDonate] = useState(false);
   const [previewImage, setPreviewImage] = useState(null); // full-size receipt photo lightbox — { src, merchant } or null
   const [form,         setForm]         = useState(blank());
   const [editId,       setEditId]       = useState(null);
@@ -281,10 +282,10 @@ export default function App() {
   // Lock background page scroll whenever any modal is open — without this, touch/wheel
   // events pass through the modal's backdrop and scroll the dashboard behind it.
   useEffect(() => {
-    const anyModalOpen = showSettings || showTools || showReceipt || showCatPick || showFilterPick || showScan || showFormBE || showScenario || showAuditCheck || showVault || showSpouseDetail || showPaywall || !!previewImage;
+    const anyModalOpen = showSettings || showTools || showReceipt || showCatPick || showFilterPick || showScan || showFormBE || showScenario || showAuditCheck || showVault || showSpouseDetail || showPaywall || showDonate || !!previewImage;
     document.body.style.overflow = anyModalOpen ? "hidden" : "";
     return () => { document.body.style.overflow = ""; };
-  }, [showSettings, showTools, showReceipt, showCatPick, showFilterPick, showScan, showFormBE, showScenario, showAuditCheck, showVault, showSpouseDetail, showPaywall, previewImage]);
+  }, [showSettings, showTools, showReceipt, showCatPick, showFilterPick, showScan, showFormBE, showScenario, showAuditCheck, showVault, showSpouseDetail, showPaywall, showDonate, previewImage]);
 
   const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(""), 3500); };
 
@@ -610,6 +611,7 @@ export default function App() {
     setChildU18(0); setChildHiEduDegree(0); setChildHiEduOther(0); setChildDisabled(0); setChildDisabledHiEdu(0); setHomeLoanTier("under500k");
     setClientName("");
     setSideHustleInc(""); setSideHustleExp(""); setRentalInc(""); setRentalExp("");
+    await persistBilling({ trialUsed: false, trialStart: null, subEnd: null });
     try {
       await store.set("mc26-receipts", JSON.stringify([]));
       await store.set("mc26-income", JSON.stringify({}));
@@ -1059,6 +1061,11 @@ export default function App() {
               <Sliders className="w-4 h-4 text-pink-600" /><span className="hidden sm:inline">Tools</span>
             </button>
             {!isPro && (
+              <button onClick={() => { setShowTools(false); setShowSettings(false); setShowDonate(true); }} title="Support the project" className="p-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 flex items-center gap-1.5 text-xs font-bold">
+                <Heart className="w-4 h-4" />
+              </button>
+            )}
+            {!isPro && (
               <button onClick={() => { setShowTools(false); setShowSettings(false); openPaywall("Upgrade to Plus", "Unlock AI scanning, 7-year history, Form BE sheet and more."); }} className="px-3 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 text-white text-xs font-bold flex items-center gap-1.5 shadow">
                 <Crown className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Upgrade</span>
               </button>
@@ -1252,14 +1259,13 @@ export default function App() {
               </div>
             )}
 
-            {/* Donation — separate ask from Plus, only shown to free users. If you've already subscribed
-                to Plus you're already supporting the project, so this doesn't need to appear for you too. */}
+            {/* Donation now has its own header button (heart icon) for quick access —
+                this is just a small secondary mention, not the only way to find it. */}
             {!isPro && (
-              <div className="bg-white rounded-3xl p-5 border border-gray-200 shadow-sm space-y-2">
-                <div className="flex items-center gap-2 font-bold text-sm text-gray-800"><Heart className="w-4 h-4 text-rose-500" /> Just here to support the project?</div>
-                <p className="text-xs text-gray-500 leading-relaxed">No pressure to subscribe — if you'd rather just chip in to keep this app running, that's welcome too. Doesn't unlock anything, just goodwill.</p>
-                <a href={DONATION_URL} target="_blank" rel="noreferrer" className="w-full py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-xs font-extrabold flex items-center justify-center gap-1.5 transition"><Heart className="w-3.5 h-3.5 text-rose-500" /> Support the Project</a>
-              </div>
+              <button onClick={() => { setShowTools(false); setShowDonate(true); }} className="w-full bg-white rounded-3xl p-4 border border-gray-200 shadow-sm flex items-center justify-between text-left hover:bg-gray-50 transition">
+                <span className="flex items-center gap-2 font-bold text-sm text-gray-800"><Heart className="w-4 h-4 text-rose-500" /> Just here to support the project?</span>
+                <ArrowRight className="w-4 h-4 text-gray-400" />
+              </button>
             )}
 
             {/* Tool launcher grid */}
@@ -1433,7 +1439,11 @@ export default function App() {
               ) : (
                 <button onClick={subscribe} disabled={paymentLoading} className="w-full py-3.5 rounded-2xl bg-pink-600 hover:bg-pink-500 disabled:opacity-50 text-white font-extrabold transition shadow-md">{paymentLoading ? "Redirecting to payment…" : `Subscribe to Plus — RM${PRICE.toFixed(2)}/yr`}</button>
               )}
-              <button onClick={closePaywall} className="w-full py-2.5 rounded-xl bg-white text-gray-500 font-bold text-xs">Continue with Basic (Free) Plan</button>
+              {isTrialing ? (
+                <p className="text-center text-[11px] text-gray-400">Your free trial is active for {trialDaysLeft} more day{trialDaysLeft !== 1 ? "s" : ""} — subscribe anytime to keep Plus after it ends.</p>
+              ) : (
+                <button onClick={closePaywall} className="w-full py-2.5 rounded-xl bg-white text-gray-500 font-bold text-xs">Continue with Basic (Free) Plan</button>
+              )}
             </div>
           </div>
         </div>
@@ -2096,6 +2106,21 @@ export default function App() {
                 ))}
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* Donation Modal — reached directly via the header heart icon, not buried
+          inside Tools. Same "no pressure" framing as before, just easier to find. */}
+      {showDonate && (
+        <div className="fixed inset-0 z-[80] bg-gray-900/60 backdrop-blur-sm overflow-y-auto p-4">
+          <div className="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl space-y-4 mx-auto my-auto">
+            <div className="flex justify-between items-center">
+              <h3 className="font-extrabold text-base flex items-center gap-2 text-gray-900"><Heart className="w-5 h-5 text-rose-500" /> Support Tax Diary</h3>
+              <button onClick={() => setShowDonate(false)}><X className="w-5 h-5 text-gray-400" /></button>
+            </div>
+            <p className="text-sm text-gray-500 leading-relaxed">No pressure to subscribe to Plus — if you'd rather just chip in to keep this app running, that's welcome too. Doesn't unlock anything, just goodwill.</p>
+            <a href={DONATION_URL} target="_blank" rel="noreferrer" onClick={() => setShowDonate(false)} className="w-full py-3 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-2xl text-sm font-extrabold flex items-center justify-center gap-1.5 transition border border-rose-200"><Heart className="w-4 h-4" /> Support the Project</a>
           </div>
         </div>
       )}
