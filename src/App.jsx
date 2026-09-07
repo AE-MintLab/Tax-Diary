@@ -216,6 +216,7 @@ export default function App() {
   const [lastSyncedAt,   setLastSyncedAt]   = useState("");
   const cloudPullStarted  = useRef(null); // uid we've STARTED pulling for (prevents duplicate concurrent pulls)
   const cloudPullComplete = useRef(null); // uid we've actually FINISHED pulling for (gates the push effect)
+  const localUpdatedAtRef = useRef(0);    // epoch ms — when local data last actually changed (see init() and the pull effect)
   const hydrated = useRef(false);
 
   useEffect(() => { init(); }, []);
@@ -309,6 +310,15 @@ export default function App() {
 
       const b = await store.get("mc26-billing");
       if (b?.value) setBilling(JSON.parse(b.value));
+
+      // Tracks when local data last actually changed, independent of whether
+      // it's finished syncing to the cloud yet. Used by the cloud pull effect
+      // below to detect "local is newer than what's in Firestore" — e.g. a
+      // receipt just added, whose cloud write got interrupted by a refresh —
+      // so it can push instead of blindly overwriting local with stale cloud
+      // data. Without this, that exact scenario silently loses the receipt.
+      const lu = await store.get("mc26-lastlocalupdate");
+      localUpdatedAtRef.current = lu?.value ? parseInt(lu.value, 10) : 0;
 
       // Note: signedIn/vaultEmail are no longer loaded here — they come from
       // Firebase's onAuthStateChanged listener (see below), which is the real
@@ -544,12 +554,24 @@ export default function App() {
         const snap = await getDoc(ref);
         if (snap.exists()) {
           const d = snap.data();
-          setReceipts(d.receipts || []); setIncome(d.income ?? ""); setOtherIncomeAmt(d.otherIncomeAmt ?? "0"); setEpfAmt(d.epfAmt ?? ""); setSocsoAmt(d.socsoAmt ?? "350"); setPcbAmt(d.pcbAmt ?? ""); setZakatAmt(d.zakatAmt ?? "0"); setIsSelfOKU(d.isSelfOKU || false);
-          setMaritalStatus(d.maritalStatus || "single"); setSpouseInc(d.spouseInc ?? ""); setSpouseEpfAmt(d.spouseEpfAmt ?? ""); setSpouseSocsoAmt(d.spouseSocsoAmt ?? "350"); setSpousePcbAmt(d.spousePcbAmt ?? ""); setSpouseDisabled(!!d.spouseDisabled); setSpouseName(d.spouseName || "Spouse"); setChildrenClaimedBy(d.childrenClaimedBy || "mine");
-          if (d.spouseEpfAmt) setSpouseEpfTouched(true);
-          setChildU18(d.childU18 ?? 0); setChildHiEduDegree(d.childHiEduDegree ?? 0); setChildHiEduOther(d.childHiEduOther ?? 0); setChildDisabled(d.childDisabled ?? 0); setChildDisabledHiEdu(d.childDisabledHiEdu ?? 0); setHomeLoanTier(d.homeLoanTier || "under500k");
-          setClientName(d.clientName || "");
-          showToast("Cloud data loaded ✓");
+          const cloudUpdatedAt = d.updatedAt ? new Date(d.updatedAt).getTime() : 0;
+          if (localUpdatedAtRef.current > cloudUpdatedAt) {
+            // Local has a more recent change than the cloud copy — most likely
+            // a add/edit whose push got interrupted (e.g. the page was
+            // refreshed right after saving, before the write finished). Push
+            // local up as authoritative instead of overwriting it with the
+            // now-stale cloud data — that overwrite is exactly what silently
+            // lost a just-added receipt before this fix.
+            await setDoc(ref, buildCloudSnapshot(), { merge: true });
+            showToast("Local changes synced to cloud ✓");
+          } else {
+            setReceipts(d.receipts || []); setIncome(d.income ?? ""); setOtherIncomeAmt(d.otherIncomeAmt ?? "0"); setEpfAmt(d.epfAmt ?? ""); setSocsoAmt(d.socsoAmt ?? "350"); setPcbAmt(d.pcbAmt ?? ""); setZakatAmt(d.zakatAmt ?? "0"); setIsSelfOKU(d.isSelfOKU || false);
+            setMaritalStatus(d.maritalStatus || "single"); setSpouseInc(d.spouseInc ?? ""); setSpouseEpfAmt(d.spouseEpfAmt ?? ""); setSpouseSocsoAmt(d.spouseSocsoAmt ?? "350"); setSpousePcbAmt(d.spousePcbAmt ?? ""); setSpouseDisabled(!!d.spouseDisabled); setSpouseName(d.spouseName || "Spouse"); setChildrenClaimedBy(d.childrenClaimedBy || "mine");
+            if (d.spouseEpfAmt) setSpouseEpfTouched(true);
+            setChildU18(d.childU18 ?? 0); setChildHiEduDegree(d.childHiEduDegree ?? 0); setChildHiEduOther(d.childHiEduOther ?? 0); setChildDisabled(d.childDisabled ?? 0); setChildDisabledHiEdu(d.childDisabledHiEdu ?? 0); setHomeLoanTier(d.homeLoanTier || "under500k");
+            setClientName(d.clientName || "");
+            showToast("Cloud data loaded ✓");
+          }
         } else {
           await setDoc(ref, buildCloudSnapshot());
           showToast("Cloud backup created ✓");
@@ -599,6 +621,24 @@ export default function App() {
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [receipts, income, otherIncomeAmt, epfAmt, socsoAmt, pcbAmt, zakatAmt, isSelfOKU, maritalStatus, spouseInc, spouseEpfAmt, spouseSocsoAmt, spousePcbAmt, spouseDisabled, spouseName, childU18, childHiEduDegree, childHiEduOther, childDisabled, childDisabledHiEdu, homeLoanTier, childrenClaimedBy, clientName, isPro, signedIn]);
+
+  // Records "local data changed just now" — deliberately UNCONDITIONAL (runs
+  // for every user, signed in or not, Plus or free) so this timestamp is
+  // always accurate regardless of cloud-sync status. This is what lets the
+  // pull effect above tell the difference between "cloud data is genuinely
+  // newer" vs "local has a very recent change whose cloud write may not have
+  // landed yet" — e.g. a receipt just added, then the page refreshed before
+  // the corresponding setDoc() finished. Skipped on the very first run after
+  // mount (before hydrated.current is true) so loading saved data back in
+  // doesn't itself get counted as a fresh "local change".
+  useEffect(() => {
+    if (!hydrated.current) return;
+    const t = Date.now();
+    localUpdatedAtRef.current = t;
+    store.set("mc26-lastlocalupdate", String(t)).catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [receipts, income, otherIncomeAmt, epfAmt, socsoAmt, pcbAmt, zakatAmt, isSelfOKU, maritalStatus, spouseInc, spouseEpfAmt, spouseSocsoAmt, spousePcbAmt, spouseDisabled, spouseName, childU18, childHiEduDegree, childHiEduOther, childDisabled, childDisabledHiEdu, homeLoanTier, childrenClaimedBy, clientName]);
+
   useEffect(() => {
     if (!hasSpouse || spouseEpfTouched) return;
     const auto = Math.round((parseFloat(spouseInc) || 0) * 0.11);
