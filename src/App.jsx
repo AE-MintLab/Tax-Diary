@@ -192,7 +192,10 @@ export default function App() {
   const [rentalExp,     setRentalExp]     = useState("");
 
   // ── Billing / Trial State ───────────────────────────────────────────────────
-  const [billing, setBilling] = useState({ trialUsed: false, trialStart: null, subEnd: null });
+  // Note: billing/trial/subscription status no longer lives in local device
+  // state — it's derived entirely from cloudBilling (Firestore, server-write-
+  // only) below, which is what actually closes the "sign out and back in to
+  // reset your trial" loophole.
   const [now, setNow] = useState(Date.now());
   const [showPaywall, setShowPaywall] = useState(false);
   const [paywallCtx,  setPaywallCtx]  = useState({ title: "AI Receipt Scanner", desc: "Snap a receipt and let AI fill in the details for you." });
@@ -308,8 +311,6 @@ export default function App() {
       const s = await store.get("mc26-settings");
       if (s?.value) { const p = JSON.parse(s.value); setClientName(p.clientName || ""); }
 
-      const b = await store.get("mc26-billing");
-      if (b?.value) setBilling(JSON.parse(b.value));
 
       // Tracks when local data last actually changed, independent of whether
       // it's finished syncing to the cloud yet. Used by the cloud pull effect
@@ -334,7 +335,6 @@ export default function App() {
   const persist = async (list) => { setReceipts(list); try { await store.set("mc26-receipts", JSON.stringify(list)); } catch { showToast("Saved this session"); } };
   const persistIncome   = async () => { try { await store.set("mc26-income",   JSON.stringify({ income, otherIncomeAmt, epf: epfAmt, socsoAmt, pcbAmt, zakatAmt, isSelfOKU, maritalStatus, spouseInc, spouseEpfAmt, spouseSocsoAmt, spousePcbAmt, spouseDisabled, spouseName, childU18, childHiEduDegree, childHiEduOther, childDisabled, childDisabledHiEdu, homeLoanTier, childrenClaimedBy })); } catch {} };
   const persistSettings = async () => { try { await store.set("mc26-settings", JSON.stringify({ clientName })); } catch {} };
-  const persistBilling  = async (b) => { setBilling(b); try { await store.set("mc26-billing", JSON.stringify(b)); } catch {} };
 
   // ── Tier / Trial Derived State ──────────────────────────────────────────────
   // Trial stays local/client-only (unchanged) — it's free, so the stakes of a
@@ -354,9 +354,10 @@ export default function App() {
     return () => unsub();
   }, [signedIn]);
 
-  const trialEnd   = billing.trialStart ? billing.trialStart + 7 * DAY : null;
+  const trialEnd   = cloudBilling?.trialStart ? cloudBilling.trialStart + 7 * DAY : null;
   const isTrialing = !!(trialEnd && now < trialEnd);
   const trialDaysLeft = isTrialing ? Math.max(1, Math.ceil((trialEnd - now) / DAY)) : 0;
+  const trialUsed = !!cloudBilling?.trialUsed;
   const isSubscribed  = !!(cloudBilling?.subEnd && now < cloudBilling.subEnd);
   const isPro = isTrialing || isSubscribed;
   const daysToRenewal = isSubscribed ? Math.ceil((cloudBilling.subEnd - now) / DAY) : null;
@@ -384,9 +385,27 @@ export default function App() {
   };
 
   const startTrial = async () => {
-    await persistBilling({ ...billing, trialUsed: true, trialStart: Date.now() });
-    showToast("Plus trial started — 7 days free ✓");
-    closePaywall();
+    if (!signedIn) {
+      closePaywall();
+      openSettings("sync");
+      showToast("Please sign in first, then tap Start Trial again.");
+      return;
+    }
+    setPaymentLoading(true);
+    try {
+      const idToken = await auth.currentUser.getIdToken();
+      const r = await fetch("/api/start-trial", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ idToken }),
+      });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data?.error || "Could not start trial");
+      showToast("Plus trial started — 7 days free ✓");
+      closePaywall();
+    } catch (err) {
+      showToast(err.message);
+    } finally { setPaymentLoading(false); }
   };
 
   // Real payment flow, replacing the old one-line "just grant Plus" stub.
@@ -674,12 +693,11 @@ export default function App() {
   // Out" first — like any browser-based local storage, handing an unlocked,
   // still-signed-in device to someone else bypasses this entirely.
   const resetLocalStateToBlank = async () => {
-    setReceipts([]); setIncome(""); setOtherIncomeAmt("0"); setEpfAmt(""); setPcbAmt(""); setSocsoAmt("350"); setZakatAmt("0"); setIsSelfOKU(false);
-    setMaritalStatus("single"); setSpouseInc(""); setSpouseEpfAmt(""); setSpouseEpfTouched(false); setSpouseSocsoAmt("350"); setSpousePcbAmt(""); setSpouseDisabled(false); setSpouseName("Spouse"); setChildrenClaimedBy("mine");
+    setReceipts([]); setIncome(""); setOtherIncomeAmt("0"); setEpfAmt(""); setPcbAmt(""); setSocsoAmt(""); setZakatAmt("0"); setIsSelfOKU(false);
+    setMaritalStatus("single"); setSpouseInc(""); setSpouseEpfAmt(""); setSpouseEpfTouched(false); setSpouseSocsoAmt(""); setSpousePcbAmt(""); setSpouseDisabled(false); setSpouseName("Spouse"); setChildrenClaimedBy("mine");
     setChildU18(0); setChildHiEduDegree(0); setChildHiEduOther(0); setChildDisabled(0); setChildDisabledHiEdu(0); setHomeLoanTier("under500k");
     setClientName("");
     setSideHustleInc(""); setSideHustleExp(""); setRentalInc(""); setRentalExp("");
-    await persistBilling({ trialUsed: false, trialStart: null, subEnd: null });
     try {
       await store.set("mc26-receipts", JSON.stringify([]));
       await store.set("mc26-income", JSON.stringify({}));
@@ -951,10 +969,44 @@ export default function App() {
   const handleDelete = async (id) => { await persist(receipts.filter(r => r.id !== id)); showToast("Deleted from vault"); };
   const startEdit = (r) => { setForm({ category: r.category, amount: String(r.amount), merchant: r.merchant || "", date: r.date, image: r.image || null, taxYear: r.taxYear || 2026, owner: r.owner || "joint" }); setEditId(r.id); setShowVault(false); openReceiptModal(() => setShowVault(true)); };
 
-  const handleImage = (e) => {
+  // Compresses a photo down to reasonable dimensions/quality via canvas before
+  // it's stored — modern phone cameras routinely produce 3-8MB photos, which
+  // is both a poor UX (rejected uploads) and a real risk (Firestore documents
+  // cap at 1MiB, and every receipt photo lives inside one). This works
+  // regardless of the original file size, rather than just raising a cutoff.
+  const compressImage = (file, maxDimension = 1600, quality = 0.75) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onerror = () => reject(new Error("Couldn't read that image"));
+      reader.onload = () => {
+        const img = new Image();
+        img.onerror = () => reject(new Error("Couldn't read that image"));
+        img.onload = () => {
+          let { width, height } = img;
+          if (width > maxDimension || height > maxDimension) {
+            if (width > height) { height = Math.round(height * (maxDimension / width)); width = maxDimension; }
+            else { width = Math.round(width * (maxDimension / height)); height = maxDimension; }
+          }
+          const canvas = document.createElement("canvas");
+          canvas.width = width; canvas.height = height;
+          canvas.getContext("2d").drawImage(img, 0, 0, width, height);
+          resolve(canvas.toDataURL("image/jpeg", quality));
+        };
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleImage = async (e) => {
     const f = e.target.files[0]; if (!f) return;
-    if (f.size > 600000) return showToast("Image over 600KB");
-    const rd = new FileReader(); rd.onloadend = () => setForm(p => ({ ...p, image: rd.result })); rd.readAsDataURL(f);
+    if (f.size > 15000000) return showToast("Image too large (max 15MB) — try a different photo");
+    try {
+      const compressed = await compressImage(f);
+      setForm(p => ({ ...p, image: compressed }));
+    } catch {
+      showToast("Couldn't process that image — please try again");
+    }
   };
 
   const exportCSV = (pdf = false) => {
@@ -995,6 +1047,11 @@ export default function App() {
     const rd = new FileReader();
     rd.onloadend = async () => {
       const dataUrl = rd.result; setOcrLoading(true); showToast("AI analyzing receipt image…");
+      // Compress the copy we'll actually STORE on the receipt (Firestore-size
+      // safety, same reasoning as handleImage) — but Gemini still gets the
+      // original full-quality image below, for the best extraction accuracy.
+      let storedImage = dataUrl;
+      try { storedImage = await compressImage(f); } catch { /* fall back to uncompressed if this fails */ }
       try {
         const base64Data = dataUrl.split(",")[1];
         const mimeType = dataUrl.split(";")[0].split(":")[1] || "image/png";
@@ -1014,14 +1071,14 @@ export default function App() {
         const safeAmount = (typeof parsed.amount === "number" && isFinite(parsed.amount)) ? String(parsed.amount) : (typeof parsed.amount === "string" && !isNaN(parseFloat(parsed.amount))) ? parsed.amount : "0.00";
         const safeDate = (typeof parsed.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(parsed.date)) ? parsed.date : new Date().toISOString().split("T")[0];
         const safeCategory = (typeof parsed.category === "string" && validCategoryIds.includes(parsed.category)) ? parsed.category : "lifestyle";
-        setForm(f => ({ ...f, merchant: safeMerchant, amount: safeAmount, date: safeDate, category: safeCategory, image: dataUrl, taxYear }));
+        setForm(f => ({ ...f, merchant: safeMerchant, amount: safeAmount, date: safeDate, category: safeCategory, image: storedImage, taxYear }));
         setShowScan(false); setShowReceipt(true);
         showToast(`AI Extracted: ${safeMerchant} · RM ${safeAmount}`);
       } catch (err) {
         // Honest failure — drop into manual entry with the photo attached rather
         // than silently faking merchant/amount/category.
         console.error("AI scan failed:", err);
-        setForm(f => ({ ...f, image: dataUrl, taxYear }));
+        setForm(f => ({ ...f, image: storedImage, taxYear }));
         setShowScan(false); setShowReceipt(true);
         showToast(`AI scan failed: ${err.message} — fill in manually`);
       } finally { setOcrLoading(false); }
@@ -1125,22 +1182,16 @@ export default function App() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <button onClick={() => { setShowSettings(false); setShowPaywall(false); setShowTools(true); }} className="px-3 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-200 flex items-center gap-1.5 text-xs font-bold">
-              <Sliders className="w-4 h-4 text-pink-600" /><span className="hidden sm:inline">Tools</span>
-            </button>
             {!isPro && (
-              <button onClick={() => { setShowTools(false); setShowSettings(false); setShowDonate(true); }} title="Support the project" className="p-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 flex items-center gap-1.5 text-xs font-bold">
+              <button onClick={() => setShowDonate(true)} title="Support the project" className="p-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 flex items-center gap-1.5 text-xs font-bold">
                 <Heart className="w-4 h-4" />
               </button>
             )}
             {!isPro && (
-              <button onClick={() => { setShowTools(false); setShowSettings(false); openPaywall("Upgrade to Plus", "Unlock AI scanning, 7-year history, Form BE sheet and more."); }} className="px-3 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 text-white text-xs font-bold flex items-center gap-1.5 shadow">
+              <button onClick={() => openPaywall("Upgrade to Plus", "Unlock AI scanning, 7-year history, Form BE sheet and more.")} className="px-3 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 text-white text-xs font-bold flex items-center gap-1.5 shadow">
                 <Crown className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Upgrade</span>
               </button>
             )}
-            <button onClick={() => openSettings("user")} className="p-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-600 border border-gray-200 flex items-center gap-1.5 text-xs font-bold">
-              <Settings className="w-4 h-4" />
-            </button>
           </div>
         </div>
       </header>
@@ -1152,7 +1203,7 @@ export default function App() {
         </p>
       </div>
 
-      <main className="flex-1 max-w-6xl w-full mx-auto p-4 space-y-4">
+      <main className="flex-1 max-w-6xl w-full mx-auto p-4 space-y-4 pb-24">
 
         {/* Hero Banner */}
         <div className="bg-white/90 backdrop-blur-md rounded-3xl p-5 sm:p-6 shadow-xl border-2 border-pink-200/70 relative overflow-hidden space-y-4">
@@ -1256,7 +1307,7 @@ export default function App() {
                                     )}
                                   </span>
                                   {c.isAuto ? (
-                                    <button onClick={() => openSettings("income")} className="text-[11px] font-bold text-pink-700 hover:underline shrink-0">Edit in Settings</button>
+                                    <button onClick={() => openSettings("income")} className="text-[11px] font-bold text-pink-700 hover:underline shrink-0">Edit in Profile</button>
                                   ) : (
                                     <button onClick={() => { setForm({ ...blank(taxYear), category: c.id }); setShowReceipt(true); }} className="text-[11px] font-bold text-pink-700 hover:underline shrink-0">+ Add Receipt</button>
                                   )}
@@ -1293,7 +1344,7 @@ export default function App() {
                       </div>
                       <p className="text-[11px] text-gray-500">{c.note}</p>
                       {c.isAuto ? (
-                        <button onClick={() => openSettings("income")} className="w-full py-1.5 rounded-xl bg-pink-50 hover:bg-pink-100 text-pink-800 font-bold text-[11px] border border-pink-200 flex items-center justify-center gap-1">Edit in Settings</button>
+                        <button onClick={() => openSettings("income")} className="w-full py-1.5 rounded-xl bg-pink-50 hover:bg-pink-100 text-pink-800 font-bold text-[11px] border border-pink-200 flex items-center justify-center gap-1">Edit in Profile</button>
                       ) : (
                         <button onClick={() => { setForm({ ...blank(taxYear), category: c.id }); setShowReceipt(true); }} className="w-full py-1.5 rounded-xl bg-pink-50 hover:bg-pink-100 text-pink-800 font-bold text-[11px] border border-pink-200 flex items-center justify-center gap-1"><Plus className="w-3 h-3" /> Add Receipt</button>
                       )}
@@ -1305,16 +1356,49 @@ export default function App() {
           </div>
 
         </div>
+
+        {/* Footer */}
+        <footer className="pt-6 pb-2 flex flex-col items-center gap-2 text-center">
+          <img src="/brand/wordmark.png" alt="Tax Diary" className="h-6 w-auto opacity-70" />
+          <p className="text-[11px] text-gray-400">Track · Save · File with confidence</p>
+          <p className="text-[10px] text-gray-300">Made with 🩷 by AE-MintLab · © {new Date().getFullYear()} Tax Diary</p>
+        </footer>
       </main>
+
+      {/* ── Bottom Tab Bar ──────────────────────────────────────────────────── */}
+      {(() => {
+        const homeActive = !showVault && !showTools && !showSettings && !showAuditCheck && !showScenario && !showFormBE && !showSpouseDetail && !showPaywall && !showDonate;
+        const vaultActive = showVault;
+        const toolsActive = showTools || showAuditCheck || showScenario || showFormBE || showSpouseDetail;
+        const profileActive = showSettings;
+        const goHome = () => { setShowVault(false); setShowTools(false); setShowSettings(false); setShowAuditCheck(false); setShowScenario(false); setShowFormBE(false); setShowSpouseDetail(false); setShowPaywall(false); setShowDonate(false); };
+        const goVault = () => { setShowTools(false); setShowSettings(false); openVault(); };
+        const goTools = () => { setShowVault(false); setShowSettings(false); setShowTools(true); };
+        const goProfile = () => { setShowVault(false); setShowTools(false); openSettings("user"); };
+        const tabBtn = (active, onClick, Icon, label) => (
+          <button onClick={onClick} className={`flex flex-col items-center gap-0.5 px-4 py-1.5 rounded-2xl transition ${active ? "text-pink-600" : "text-gray-400"}`}>
+            <Icon className="w-5 h-5" strokeWidth={active ? 2.5 : 2} />
+            <span className={`text-[10px] ${active ? "font-extrabold" : "font-semibold"}`}>{label}</span>
+          </button>
+        );
+        return (
+          <nav className="fixed bottom-0 inset-x-0 z-[55] bg-white/95 backdrop-blur-md border-t border-gray-200 px-2 pt-1.5 pb-[calc(0.375rem+env(safe-area-inset-bottom))] flex items-center justify-around">
+            {tabBtn(homeActive, goHome, Home, "Home")}
+            {tabBtn(vaultActive, goVault, Receipt, "Vault")}
+            {tabBtn(toolsActive, goTools, Sliders, "Tools")}
+            {tabBtn(profileActive, goProfile, Settings, "Profile")}
+          </nav>
+        );
+      })()}
 
       {/* ── Tools Hub Modal ─────────────────────────────────────────────────── */}
       {showTools && (
-        <div className="fixed inset-0 z-[65] bg-gray-900/60 backdrop-blur-sm overflow-y-auto p-4">
-          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-4 mx-auto my-8">
+        <div className="fixed inset-0 z-[65] bg-gray-900/60 backdrop-blur-sm overflow-y-auto p-4" onClick={() => setShowTools(false)}>
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-4 mx-auto my-8" onClick={(e) => e.stopPropagation()}>
             <div className="flex justify-between items-center border-b border-gray-100 pb-3">
               <div>
                 <h3 className="font-extrabold text-base flex items-center gap-2"><Sliders className="w-5 h-5 text-pink-600" /> Tools</h3>
-                <p className="text-xs text-gray-400">Receipt Vault · Checklist · Planner · Form BE · Spouse Strategy</p>
+                <p className="text-xs text-gray-400">Checklist · Planner · Form BE · Spouse Strategy</p>
               </div>
               <button onClick={() => setShowTools(false)}><X className="w-5 h-5 text-gray-400" /></button>
             </div>
@@ -1350,16 +1434,13 @@ export default function App() {
               <button onClick={() => { setShowTools(false); setShowSpouseDetail(true); }} className="p-3 rounded-2xl bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-800 font-bold text-xs flex flex-col items-center gap-1.5 text-center">
                 <Heart className="w-5 h-5 text-rose-500" /> Spouse Strategy
               </button>
-              <button onClick={() => { setShowTools(false); openVault(() => setShowTools(true)); }} className="p-3 rounded-2xl bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-800 font-bold text-xs flex flex-col items-center gap-1.5 text-center">
-                <Receipt className="w-5 h-5 text-pink-600" /> Receipt Vault
-              </button>
             </div>
 
             {/* Compliance & Vault Years */}
             <div className="bg-gradient-to-br from-gray-900 to-pink-950 rounded-3xl p-5 text-white shadow-md space-y-3">
               <div className="flex items-center gap-2 text-amber-300 font-bold text-xs border-b border-white/10 pb-2"><Archive className="w-4 h-4" /> LHDN 7-Year Vault Compliance</div>
               <p className="text-xs text-gray-300 leading-relaxed">Section 82A, ITA 1967: retain all receipts for <strong>7 years</strong> after the relevant YA.</p>
-              <button onClick={() => { setShowTools(false); openSettings("audit", () => setShowTools(true)); }} className="w-full py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 border border-white/20 transition"><Archive className="w-3.5 h-3.5" /> Manage Vault Years</button>
+              <button onClick={() => { setShowTools(false); openVault(() => setShowTools(true)); }} className="w-full py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 border border-white/20 transition"><Archive className="w-3.5 h-3.5" /> Manage Vault Years</button>
               <a href="https://mytax.hasil.gov.my" target="_blank" rel="noreferrer" className="w-full py-2 bg-pink-700 hover:bg-pink-600 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition"><ExternalLink className="w-3.5 h-3.5" /> MyTax Official Portal</a>
             </div>
 
@@ -1370,8 +1451,8 @@ export default function App() {
 
       {/* ── Audit-Ready Checklist Modal ────────────────────────────────────── */}
       {showAuditCheck && (
-        <div className="fixed inset-0 z-[70] bg-gray-900/60 backdrop-blur-sm overflow-y-auto p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 mx-auto my-8">
+        <div className="fixed inset-0 z-[70] bg-gray-900/60 backdrop-blur-sm overflow-y-auto p-4" onClick={() => { setShowAuditCheck(false); setShowTools(true); }}>
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 mx-auto my-8" onClick={(e) => e.stopPropagation()}>
             <div className="flex justify-between items-center border-b border-gray-100 pb-3">
               <h3 className="font-bold text-base flex items-center gap-2"><ShieldCheck className="w-5 h-5 text-pink-600" /> Audit-Ready Checklist</h3>
               <button onClick={() => { setShowAuditCheck(false); setShowTools(true); }}><X className="w-5 h-5 text-gray-400" /></button>
@@ -1403,8 +1484,8 @@ export default function App() {
 
       {/* ── Other Income (Side Hustle & Rental) Modal — free, feeds real tax calc ───────── */}
       {showScenario && (
-        <div className="fixed inset-0 z-[70] bg-gray-900/60 backdrop-blur-sm overflow-y-auto p-4">
-          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-4 mx-auto my-8">
+        <div className="fixed inset-0 z-[70] bg-gray-900/60 backdrop-blur-sm overflow-y-auto p-4" onClick={() => { setShowScenario(false); setShowTools(true); }}>
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-4 mx-auto my-8" onClick={(e) => e.stopPropagation()}>
             <div className="flex justify-between items-center border-b border-gray-100 pb-3">
               <h3 className="font-bold text-base flex items-center gap-2"><Briefcase className="w-5 h-5 text-violet-600" /> Other Income</h3>
               <button onClick={() => { setShowScenario(false); setShowTools(true); }}><X className="w-5 h-5 text-gray-400" /></button>
@@ -1454,8 +1535,8 @@ export default function App() {
 
       {/* ── Paywall Modal ─────────────────────────────────────────────────── */}
       {showPaywall && (
-        <div className="fixed inset-0 z-[90] bg-gray-900/70 backdrop-blur-sm overflow-y-auto p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full shadow-2xl overflow-hidden mx-auto my-8">
+        <div className="fixed inset-0 z-[90] bg-gray-900/70 backdrop-blur-sm overflow-y-auto p-4" onClick={closePaywall}>
+          <div className="bg-white rounded-3xl max-w-md w-full shadow-2xl overflow-hidden mx-auto my-8" onClick={(e) => e.stopPropagation()}>
             <div className="p-6 space-y-4">
               <div className="flex justify-between items-center">
                 <h3 className="font-extrabold text-lg text-gray-900 flex items-center gap-2"><Crown className="w-5 h-5 text-amber-500" /> Upgrade to Plus</h3>
@@ -1499,7 +1580,7 @@ export default function App() {
                   ))}
                 </div>
               </div>
-              {!billing.trialUsed ? (
+              {!trialUsed ? (
                 <div className="space-y-2">
                   <button onClick={startTrial} disabled={paymentLoading} className="w-full py-3.5 rounded-2xl bg-pink-600 hover:bg-pink-500 disabled:opacity-50 text-white font-extrabold transition shadow-md">Start 7-Day Free Trial</button>
                   <button onClick={subscribe} disabled={paymentLoading} className="w-full py-2.5 rounded-2xl bg-gray-100 hover:bg-gray-200 disabled:opacity-50 text-gray-700 font-bold text-xs transition">{paymentLoading ? "Redirecting to payment…" : `Skip trial, subscribe now — RM${PRICE.toFixed(2)}/yr`}</button>
@@ -1532,8 +1613,8 @@ export default function App() {
 
       {/* ── Form BE Copy Sheet Modal ────────────────────────────────────────── */}
       {showFormBE && (
-        <div className="fixed inset-0 z-[70] bg-gray-900/60 backdrop-blur-sm overflow-y-auto p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full shadow-2xl mx-auto my-8 overflow-hidden">
+        <div className="fixed inset-0 z-[70] bg-gray-900/60 backdrop-blur-sm overflow-y-auto p-4" onClick={() => { setShowFormBE(false); setShowTools(true); }}>
+          <div className="bg-white rounded-3xl max-w-md w-full shadow-2xl mx-auto my-8 overflow-hidden" onClick={(e) => e.stopPropagation()}>
             <div className="p-5 border-b border-gray-100 flex items-center justify-between bg-gray-50">
               <div className="flex items-center gap-2.5">
                 <div className="p-2.5 bg-pink-100 text-pink-700 rounded-2xl shrink-0"><Sparkles className="w-5 h-5" /></div>
@@ -1595,8 +1676,8 @@ export default function App() {
 
       {/* ── Receipt Vault Modal (split out of Tools) ─────────────────────────── */}
       {showVault && (
-        <div className="fixed inset-0 z-[70] bg-gray-900/60 backdrop-blur-sm overflow-y-auto p-4">
-          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-4 mx-auto my-8">
+        <div className="fixed inset-0 z-[70] bg-gray-900/60 backdrop-blur-sm overflow-y-auto p-4" onClick={closeVault}>
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-4 mx-auto my-8" onClick={(e) => e.stopPropagation()}>
             <div className="flex justify-end">
               <button onClick={closeVault}><X className="w-5 h-5 text-gray-400" /></button>
             </div>
@@ -1614,6 +1695,22 @@ export default function App() {
                     {isPro ? <FileText className="w-3.5 h-3.5" /> : <Lock className="w-3.5 h-3.5 text-amber-500" />} PDF
                   </button>
                 </div>
+              </div>
+
+              {/* Year selector — merged in from the old Settings > Vault tab, so
+                  switching tax years lives right where the receipts themselves do. */}
+              <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
+                {AUDIT_YRS.map(y => {
+                  const ct = receipts.filter(r => (r.taxYear || 2026) === y).length;
+                  const locked = y !== 2026 && !isPro;
+                  return (
+                    <button key={y} onClick={() => locked ? openPaywall("7-Year Vault Access", "Free plan only covers the current tax year. Upgrade to view and export past years.", () => openVault()) : setTaxYear(y)} className={`shrink-0 p-2 rounded-xl border text-center transition relative min-w-[64px] ${taxYear === y ? "bg-pink-600 text-white border-pink-700 font-extrabold" : locked ? "bg-gray-50 text-gray-400 border-gray-200" : "bg-white text-gray-700 border-gray-200 hover:bg-gray-100 font-bold"}`}>
+                      {locked && <Lock className="w-3 h-3 absolute top-1 right-1 text-amber-500" />}
+                      <span className="block text-[11px]">YA {y}</span>
+                      <span className="block text-[9px] opacity-80">{ct} receipts</span>
+                    </button>
+                  );
+                })}
               </div>
 
               <div className="flex flex-col sm:flex-row gap-2">
@@ -1675,8 +1772,8 @@ export default function App() {
 
       {/* ── Detailed Household Assessment Modal (split out of Settings, married + Plus) ──── */}
       {showSpouseDetail && (
-        <div className="fixed inset-0 z-[70] bg-gray-900/60 backdrop-blur-sm overflow-y-auto p-4">
-          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-4 mx-auto my-8">
+        <div className="fixed inset-0 z-[70] bg-gray-900/60 backdrop-blur-sm overflow-y-auto p-4" onClick={() => { setShowSpouseDetail(false); setShowTools(true); }}>
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-4 mx-auto my-8" onClick={(e) => e.stopPropagation()}>
             <div className="flex justify-between items-center border-b border-gray-100 pb-3">
               <div>
                 <h3 className="font-extrabold text-base flex items-center gap-2"><Heart className="w-5 h-5 text-rose-500" /> Detailed Household Assessment</h3>
@@ -1783,18 +1880,18 @@ export default function App() {
 
       {/* Settings Modal */}
       {showSettings && (
-        <div className="fixed inset-0 z-[60] bg-gray-900/60 backdrop-blur-sm overflow-y-auto p-4">
-          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-4 mx-auto my-8">
+        <div className="fixed inset-0 z-[60] bg-gray-900/60 backdrop-blur-sm overflow-y-auto p-4" onClick={closeSettings}>
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-4 mx-auto my-8" onClick={(e) => e.stopPropagation()}>
             <div className="flex justify-between items-center border-b border-gray-100 pb-3">
               <div>
-                <h3 className="font-extrabold text-base flex items-center gap-2"><Settings className="w-5 h-5 text-pink-600" /> Settings & Profile</h3>
-                <p className="text-xs text-gray-400">Profile · Income · Spouse Optimizer · 7-Year Vault · Devices</p>
+                <h3 className="font-extrabold text-base flex items-center gap-2"><Settings className="w-5 h-5 text-pink-600" /> Profile</h3>
+                <p className="text-xs text-gray-400">Profile · Income · Spouse Optimizer · Devices</p>
               </div>
               <button onClick={closeSettings}><X className="w-5 h-5 text-gray-400" /></button>
             </div>
 
-            <div className="grid grid-cols-3 sm:grid-cols-5 bg-gray-100 p-1 rounded-2xl border border-gray-200 text-[11px] font-bold gap-1">
-              {[["user", "👤 Profile"], ["income", "🧮 Income"], ["spouse", "❤️ Spouse"], ["audit", "🗂️ Vault"], ["sync", "📱 Devices"]].map(([tab, label]) => (
+            <div className="grid grid-cols-4 bg-gray-100 p-1 rounded-2xl border border-gray-200 text-[11px] font-bold gap-1">
+              {[["user", "👤 Profile"], ["income", "🧮 Income"], ["spouse", "❤️ Spouse"], ["sync", "📱 Devices"]].map(([tab, label]) => (
                 <button key={tab} onClick={() => setSettingsTab(tab)} className={`py-2 rounded-xl transition ${settingsTab === tab ? "bg-white text-pink-700 shadow-sm" : "text-gray-600 hover:text-gray-900"}`}>{label}</button>
               ))}
             </div>
@@ -1961,34 +2058,6 @@ export default function App() {
               </div>
             )}
 
-            {settingsTab === "audit" && (
-              <div className="space-y-4 text-xs">
-                <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 space-y-2">
-                  <div className="flex items-center gap-2 font-bold text-sm"><Archive className="w-4 h-4 text-amber-700" /> LHDN Section 82A</div>
-                  <p className="text-[11px] leading-relaxed">All original receipts must be kept for <strong>7 full years</strong> after the relevant Year of Assessment.</p>
-                </div>
-                <div className="p-4 rounded-2xl bg-gray-50 border border-gray-200 space-y-3">
-                  <p className="font-bold text-gray-800">Select Year to Review:</p>
-                  <div className="grid grid-cols-4 gap-2">
-                    {AUDIT_YRS.map(y => {
-                      const ct = receipts.filter(r => (r.taxYear || 2026) === y).length;
-                      const locked = y !== 2026 && !isPro;
-                      return (
-                        <button key={y} onClick={() => locked ? (() => { setShowSettings(false); openPaywall("7-Year Vault Access", "Free plan only covers the current tax year. Upgrade to view and export past years.", () => openSettings("audit")); })() : setTaxYear(y)} className={`p-2.5 rounded-xl border text-center transition relative ${taxYear === y ? "bg-pink-600 text-white border-pink-700 font-extrabold" : locked ? "bg-gray-50 text-gray-400 border-gray-200" : "bg-white text-gray-700 border-gray-200 hover:bg-gray-100 font-bold"}`}>
-                          {locked && <Lock className="w-3 h-3 absolute top-1.5 right-1.5 text-amber-500" />}
-                          <span className="block text-xs">YA {y}</span>
-                          <span className="block text-[10px] opacity-80">{ct} receipts</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                  <button onClick={() => { setShowSettings(false); openVault(() => openSettings("audit")); }} className="w-full py-2.5 rounded-xl bg-pink-50 hover:bg-pink-100 text-pink-700 font-bold text-xs border border-pink-200 flex items-center justify-center gap-1.5">
-                    <Receipt className="w-3.5 h-3.5" /> View Receipts for YA {taxYear}
-                  </button>
-                </div>
-              </div>
-            )}
-
             {settingsTab === "sync" && (
               <div className="space-y-4 text-xs">
                 {authLoading ? (
@@ -2053,8 +2122,8 @@ export default function App() {
 
       {/* AI OCR Scanner Modal */}
       {showScan && (
-        <div className="fixed inset-0 z-[60] bg-gray-900/60 backdrop-blur-sm overflow-y-auto p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 mx-auto my-8">
+        <div className="fixed inset-0 z-[60] bg-gray-900/60 backdrop-blur-sm overflow-y-auto p-4" onClick={closeScan}>
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 mx-auto my-8" onClick={(e) => e.stopPropagation()}>
             <div className="flex justify-between items-center border-b border-gray-100 pb-3">
               <h3 className="font-bold text-base flex items-center gap-2"><Zap className="w-5 h-5 text-pink-600" /> AI Receipt Scanner (Budget 2026 Ready)</h3>
               <button onClick={closeScan}><X className="w-5 h-5 text-gray-400" /></button>
@@ -2085,8 +2154,8 @@ export default function App() {
 
       {/* Add / Edit Receipt Modal */}
       {showReceipt && (
-        <div className="fixed inset-0 z-[60] bg-gray-900/60 backdrop-blur-sm overflow-y-auto p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 mx-auto my-8">
+        <div className="fixed inset-0 z-[60] bg-gray-900/60 backdrop-blur-sm overflow-y-auto p-4" onClick={closeReceiptModal}>
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 mx-auto my-8" onClick={(e) => e.stopPropagation()}>
             <div className="flex justify-between items-center border-b border-gray-100 pb-3">
               <h3 className="font-bold text-base flex items-center gap-2"><Plus className="w-4 h-4 text-pink-600" />{editId ? "Edit Receipt" : `Add Receipt (YA ${form.taxYear || taxYear})`}</h3>
               <button onClick={closeReceiptModal}><X className="w-5 h-5 text-gray-400" /></button>
@@ -2127,7 +2196,7 @@ export default function App() {
                 </div>
               )}
               <div>
-                <label className="font-bold text-gray-700 block mb-1">Receipt Photo <span className="font-normal text-gray-400">(7-year audit proof, max 600KB)</span></label>
+                <label className="font-bold text-gray-700 block mb-1">Receipt Photo <span className="font-normal text-gray-400">(7-year audit proof — auto-compressed to save space)</span></label>
                 <label className="cursor-pointer block">
                   <div className="w-full p-3 border-2 border-dashed border-gray-300 rounded-xl flex items-center justify-center gap-2 bg-gray-50 hover:border-pink-400 transition"><Upload className="w-4 h-4 text-gray-400" /><span className="text-gray-500 text-xs">Tap to attach receipt image</span></div>
                   <input type="file" accept="image/*" onChange={handleImage} className="hidden" />
@@ -2149,8 +2218,8 @@ export default function App() {
 
       {/* Category Selection Modal */}
       {showCatPick && (
-        <div className="fixed inset-0 z-[70] bg-gray-900/70 backdrop-blur-sm overflow-y-auto">
-          <div className="bg-white rounded-t-3xl sm:rounded-3xl max-w-md w-full p-5 shadow-2xl space-y-2 mx-auto my-8">
+        <div className="fixed inset-0 z-[70] bg-gray-900/70 backdrop-blur-sm overflow-y-auto" onClick={() => { setShowCatPick(false); setShowReceipt(true); }}>
+          <div className="bg-white rounded-t-3xl sm:rounded-3xl max-w-md w-full p-5 shadow-2xl space-y-2 mx-auto my-8" onClick={(e) => e.stopPropagation()}>
             <div className="flex justify-between items-center border-b border-gray-100 pb-3 sticky top-0 bg-white"><h3 className="font-bold text-base flex items-center gap-2"><Tag className="w-4 h-4 text-pink-600" /> Select LHDN Category</h3><button onClick={() => { setShowCatPick(false); setShowReceipt(true); }}><X className="w-5 h-5 text-gray-400" /></button></div>
             {GROUPS.map(g => (
               <div key={g}>
@@ -2169,8 +2238,8 @@ export default function App() {
 
       {/* Vault filter-by-category picker — same custom style as Select LHDN Category, not the phone's native dropdown */}
       {showFilterPick && (
-        <div className="fixed inset-0 z-[75] bg-gray-900/70 backdrop-blur-sm overflow-y-auto">
-          <div className="bg-white rounded-t-3xl sm:rounded-3xl max-w-md w-full p-5 shadow-2xl space-y-2 mx-auto my-8">
+        <div className="fixed inset-0 z-[75] bg-gray-900/70 backdrop-blur-sm overflow-y-auto" onClick={() => { setShowFilterPick(false); setShowVault(true); }}>
+          <div className="bg-white rounded-t-3xl sm:rounded-3xl max-w-md w-full p-5 shadow-2xl space-y-2 mx-auto my-8" onClick={(e) => e.stopPropagation()}>
             <div className="flex justify-between items-center border-b border-gray-100 pb-3 sticky top-0 bg-white"><h3 className="font-bold text-base flex items-center gap-2"><Tag className="w-4 h-4 text-pink-600" /> Filter by Category</h3><button onClick={() => { setShowFilterPick(false); setShowVault(true); }}><X className="w-5 h-5 text-gray-400" /></button></div>
             <button onClick={() => { setRcptCatF("all"); setShowFilterPick(false); setShowVault(true); }} className={`w-full text-left px-4 py-3 rounded-2xl text-xs font-bold flex items-center justify-between transition mb-1 ${rcptCatF === "all" ? "bg-pink-50 text-pink-800 border border-pink-200" : "text-gray-700 hover:bg-gray-50"}`}>
               <span>All Categories</span>
@@ -2194,8 +2263,8 @@ export default function App() {
       {/* Donation Modal — reached directly via the header heart icon, not buried
           inside Tools. Same "no pressure" framing as before, just easier to find. */}
       {showDonate && (
-        <div className="fixed inset-0 z-[80] bg-gray-900/60 backdrop-blur-sm overflow-y-auto p-4">
-          <div className="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl space-y-4 mx-auto my-auto">
+        <div className="fixed inset-0 z-[80] bg-gray-900/60 backdrop-blur-sm overflow-y-auto p-4" onClick={() => setShowDonate(false)}>
+          <div className="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl space-y-4 mx-auto my-auto" onClick={(e) => e.stopPropagation()}>
             <div className="flex justify-between items-center">
               <h3 className="font-extrabold text-base flex items-center gap-2 text-gray-900"><Heart className="w-5 h-5 text-rose-500" /> Support Tax Diary</h3>
               <button onClick={() => setShowDonate(false)}><X className="w-5 h-5 text-gray-400" /></button>
