@@ -6,7 +6,7 @@
 // checked against Firestore (not the client's own claim), closes that
 // loophole the same way redeem-code.js and create-payment.js already do
 // for codes and real payments.
-import { adminAuth, adminDb } from "./_firebaseAdmin.js";
+import { getAdminAuth, getAdminDb } from "./_firebaseAdmin.js";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -22,7 +22,7 @@ export default async function handler(req, res) {
 
   let decoded;
   try {
-    decoded = await adminAuth.verifyIdToken(idToken);
+    decoded = await getAdminAuth().verifyIdToken(idToken);
   } catch (err) {
     console.error("[start-trial] Invalid ID token:", err);
     return res.status(401).json({ error: "Your session has expired — please sign in again." });
@@ -30,7 +30,7 @@ export default async function handler(req, res) {
   const uid = decoded.uid;
 
   try {
-    const billingRef = adminDb.doc(`users/${uid}/private/billing`);
+    const billingRef = getAdminDb().doc(`users/${uid}/private/billing`);
     const snap = await billingRef.get();
     const existing = snap.exists ? snap.data() : {};
 

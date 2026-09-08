@@ -10,16 +10,41 @@
 // environment variables, never in the GitHub repo or client-side code.
 import admin from "firebase-admin";
 
+let initError = null;
+
 if (!admin.apps.length) {
-  const raw = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
-  if (!raw) {
-    throw new Error("FIREBASE_SERVICE_ACCOUNT_JSON is not set in Vercel Environment Variables.");
+  try {
+    const raw = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
+    if (!raw) {
+      throw new Error("FIREBASE_SERVICE_ACCOUNT_JSON is not set in Vercel Environment Variables.");
+    }
+    const serviceAccount = JSON.parse(raw);
+    admin.initializeApp({
+      credential: admin.credential.cert(serviceAccount),
+    });
+  } catch (err) {
+    // Deliberately NOT re-thrown here — throwing at module load time crashes
+    // the entire function before its own try/catch ever runs, which is what
+    // caused the opaque "A server error..." (non-JSON) crash page instead of
+    // a real error message. Storing it and surfacing it lazily below means
+    // every handler's own try/catch can catch this like any normal error and
+    // return a clean, readable JSON response instead.
+    initError = err;
+    console.error("[_firebaseAdmin] Initialization failed:", err.message);
   }
-  const serviceAccount = JSON.parse(raw);
-  admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount),
-  });
 }
 
-export const adminAuth = admin.auth();
-export const adminDb = admin.firestore();
+function assertReady() {
+  if (initError) {
+    throw new Error(`Firebase Admin failed to initialize: ${initError.message}`);
+  }
+}
+
+export function getAdminAuth() {
+  assertReady();
+  return admin.auth();
+}
+export function getAdminDb() {
+  assertReady();
+  return admin.firestore();
+}

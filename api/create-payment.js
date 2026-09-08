@@ -7,7 +7,7 @@
 // be someone else. The user's UID becomes ToyyibPay's "external reference
 // number," which the payment callback later uses to know whose account to
 // credit — see api/toyyibpay-callback.js.
-import { adminAuth } from "./_firebaseAdmin.js";
+import { getAdminAuth } from "./_firebaseAdmin.js";
 
 const PLUS_PRICE_CENTS = 2900; // RM29.00 flat, per the product spec
 const TOYYIBPAY_BASE = process.env.TOYYIBPAY_BASE_URL || "https://toyyibpay.com"; // use https://dev.toyyibpay.com for sandbox testing
@@ -24,7 +24,7 @@ export default async function handler(req, res) {
 
   let decoded;
   try {
-    decoded = await adminAuth.verifyIdToken(idToken);
+    decoded = await getAdminAuth().verifyIdToken(idToken);
   } catch (err) {
     console.error("[create-payment] Invalid ID token:", err);
     return res.status(401).json({ error: "Your session has expired — please sign in again." });

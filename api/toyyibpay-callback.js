@@ -8,7 +8,7 @@
 // This is a direct implementation of ToyyibPay's documented formula:
 // https://toyyibpay.com/apireference/#cp
 import crypto from "crypto";
-import { adminDb } from "./_firebaseAdmin.js";
+import { getAdminDb } from "./_firebaseAdmin.js";
 
 const YEAR_MS = 365 * 24 * 60 * 60 * 1000;
 
@@ -49,7 +49,7 @@ export default async function handler(req, res) {
     }
 
     try {
-      const billingRef = adminDb.doc(`users/${uid}/private/billing`);
+      const billingRef = getAdminDb().doc(`users/${uid}/private/billing`);
       const snap = await billingRef.get();
       const existing = snap.exists ? snap.data() : {};
       const now = Date.now();

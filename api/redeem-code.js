@@ -8,7 +8,7 @@
 // Valid codes live in the REDEEM_CODES environment variable as a comma-
 // separated list (e.g. "TAXDIARYBETA,FAMILY2026") — editable in Vercel
 // without touching code or redeploying from GitHub.
-import { adminAuth, adminDb } from "./_firebaseAdmin.js";
+import { getAdminAuth, getAdminDb } from "./_firebaseAdmin.js";
 
 const YEAR_MS = 365 * 24 * 60 * 60 * 1000;
 
@@ -27,7 +27,7 @@ export default async function handler(req, res) {
 
   let decoded;
   try {
-    decoded = await adminAuth.verifyIdToken(idToken);
+    decoded = await getAdminAuth().verifyIdToken(idToken);
   } catch (err) {
     console.error("[redeem-code] Invalid ID token:", err);
     return res.status(401).json({ error: "Your session has expired — please sign in again." });
@@ -45,7 +45,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const billingRef = adminDb.doc(`users/${uid}/private/billing`);
+    const billingRef = getAdminDb().doc(`users/${uid}/private/billing`);
     const snap = await billingRef.get();
     const existing = snap.exists ? snap.data() : {};
     const now = Date.now();
