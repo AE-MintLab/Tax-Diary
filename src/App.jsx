@@ -17,6 +17,8 @@ import {
   sendPasswordResetEmail,
 } from "firebase/auth";
 import { doc, getDoc, setDoc, onSnapshot } from "firebase/firestore";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 // Turns Firestore's error codes into messages a non-technical user can act on.
 function firestoreErrorMessage(err) {
@@ -221,6 +223,7 @@ export default function App() {
   const cloudPullComplete = useRef(null); // uid we've actually FINISHED pulling for (gates the push effect)
   const localUpdatedAtRef = useRef(0);    // epoch ms — when local data last actually changed (see init() and the pull effect)
   const skipNextLocalStampRef = useRef(false); // true right after a deliberate reset (sign-out) — see resetLocalStateToBlank
+  const signOutInProgressRef = useRef(false); // true from the moment sign-out starts until the reset fully finishes — see doSignOut
   const hydrated = useRef(false);
 
   useEffect(() => { init(); }, []);
@@ -629,7 +632,7 @@ export default function App() {
   // pull/bootstrap above has ACTUALLY completed (not just started), so we never
   // overwrite real cloud data with stale/blank local data during that first load.
   useEffect(() => {
-    if (!hydrated.current || !isPro || !signedIn) return;
+    if (!hydrated.current || !isPro || !signedIn || signOutInProgressRef.current) return;
     const uid = auth.currentUser?.uid;
     if (!uid || cloudPullComplete.current !== uid) return;
     (async () => {
@@ -744,11 +747,20 @@ export default function App() {
   };
 
   const doSignOut = async () => {
+    // Locked from the moment sign-out starts, not just once Firebase's auth
+    // state change event fires — that event is async and its exact timing
+    // relative to signOut()'s own promise isn't guaranteed, which was the
+    // actual cause of local data getting wiped and then pushed up over real
+    // cloud data on sign-out. This lock removes that timing dependency
+    // entirely rather than hoping the two async operations land in order.
+    signOutInProgressRef.current = true;
     try {
       await signOut(auth);
       await resetLocalStateToBlank();
       showToast("Signed out — local data cleared on this device");
-    } catch {}
+    } catch {} finally {
+      signOutInProgressRef.current = false;
+    }
   };
 
   const doPasswordReset = async () => {
@@ -1028,9 +1040,8 @@ export default function App() {
     }
   };
 
-  const exportCSV = (pdf = false) => {
+  const exportCSV = () => {
     if (taxYear !== 2026 && !requireProOrPaywall("7-Year Vault Access", "Free plan only covers the current tax year. Upgrade to view and export past years.")) return;
-    if (pdf && !requireProOrPaywall("PDF Audit Export", "Compile all receipts into one audit-ready PDF file.")) return;
     const rows = activeR.map(r => `${r.date},"${getCat(r.category)?.name || r.category}","${r.merchant || ""}",${r.amount}`);
     const csv = [`Tax Diary – YA ${taxYear}`, "Date,Category,Merchant,Amount (RM)", ...rows].join("\n");
     const a = document.createElement("a");
@@ -1038,6 +1049,28 @@ export default function App() {
     a.download = `TaxDiary-YA${taxYear}.csv`;
     a.click();
     showToast(`YA ${taxYear} CSV exported ✓`);
+  };
+
+  const exportPDF = () => {
+    if (taxYear !== 2026 && !requireProOrPaywall("7-Year Vault Access", "Free plan only covers the current tax year. Upgrade to view and export past years.")) return;
+    if (!requireProOrPaywall("PDF Audit Export", "Compile all receipts into one audit-ready PDF file.")) return;
+    const pdf = new jsPDF();
+    pdf.setFontSize(16);
+    pdf.text(`Tax Diary — YA ${taxYear} Receipt Summary`, 14, 18);
+    pdf.setFontSize(9);
+    pdf.setTextColor(120);
+    pdf.text(`Generated ${new Date().toLocaleDateString("en-MY")} · ${activeR.length} receipt${activeR.length !== 1 ? "s" : ""} · Estimates only, verify with LHDN before filing`, 14, 24);
+    const total = activeR.reduce((s, r) => s + r.amount, 0);
+    autoTable(pdf, {
+      startY: 30,
+      head: [["Date", "Category", "Merchant", "Amount (RM)", "Photo"]],
+      body: activeR.map(r => [r.date, getCat(r.category)?.name || r.category, r.merchant || "—", r.amount.toFixed(2), r.image ? "Yes" : "Missing"]),
+      foot: [["", "", "", "Total", `RM ${total.toLocaleString("en-MY", { minimumFractionDigits: 2 })}`]],
+      headStyles: { fillColor: [219, 39, 119] }, // pink-600, matches app branding
+      styles: { fontSize: 8 },
+    });
+    pdf.save(`TaxDiary-YA${taxYear}.pdf`);
+    showToast(`YA ${taxYear} PDF exported ✓`);
   };
 
   const saveAll = async () => { await persistSettings(); await persistIncome(); showToast("Profile saved ✓"); closeSettings(); };
@@ -1494,7 +1527,29 @@ export default function App() {
                 ))
               )}
             </div>
-            <button onClick={() => exportCSV(true)} className="w-full py-3 bg-pink-600 hover:bg-pink-500 text-white font-extrabold rounded-2xl text-xs flex items-center justify-center gap-2 shadow">
+            <div className="space-y-2">
+              <p className="text-xs font-bold text-gray-700">Your YA {taxYear} receipts ({activeR.length}):</p>
+              {activeR.length === 0 ? (
+                <p className="text-xs text-gray-400 p-3 bg-gray-50 rounded-xl text-center">No receipts logged for YA {taxYear} yet.</p>
+              ) : (
+                <div className="max-h-48 overflow-y-auto space-y-1.5 pr-1">
+                  {activeR.map(r => (
+                    <div key={r.id} className="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-gray-50 border border-gray-100 text-xs">
+                      <div className="min-w-0 flex-1">
+                        <p className="font-bold text-gray-800 truncate">{r.merchant || getCat(r.category)?.name || "Receipt"}</p>
+                        <p className="text-[10px] text-gray-400">{getCat(r.category)?.name || r.category} · RM {r.amount.toLocaleString()}</p>
+                      </div>
+                      {r.image ? (
+                        <span className="shrink-0 flex items-center gap-1 text-emerald-600 font-bold text-[10px]"><CheckCircle2 className="w-3.5 h-3.5" /> Photo</span>
+                      ) : (
+                        <span className="shrink-0 flex items-center gap-1 text-amber-600 font-bold text-[10px]"><AlertTriangle className="w-3.5 h-3.5" /> No photo</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            <button onClick={exportPDF} className="w-full py-3 bg-pink-600 hover:bg-pink-500 text-white font-extrabold rounded-2xl text-xs flex items-center justify-center gap-2 shadow">
               <FileText className="w-4 h-4" /> Download Checklist Summary (PDF)
             </button>
           </div>
@@ -1707,10 +1762,10 @@ export default function App() {
                   <p className="text-xs text-gray-400">Keep digital proof for 7 years (LHDN Section 82A audit requirement)</p>
                 </div>
                 <div className="flex gap-2">
-                  <button onClick={() => exportCSV(false)} className="px-3 py-1.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-xs flex items-center gap-1.5">
+                  <button onClick={exportCSV} className="px-3 py-1.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-xs flex items-center gap-1.5">
                     <Download className="w-3.5 h-3.5" /> CSV
                   </button>
-                  <button onClick={() => exportCSV(true)} className="px-3 py-1.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-xs flex items-center gap-1.5">
+                  <button onClick={exportPDF} className="px-3 py-1.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-xs flex items-center gap-1.5">
                     {isPro ? <FileText className="w-3.5 h-3.5" /> : <Lock className="w-3.5 h-3.5 text-amber-500" />} PDF
                   </button>
                 </div>
