@@ -220,6 +220,7 @@ export default function App() {
   const cloudPullStarted  = useRef(null); // uid we've STARTED pulling for (prevents duplicate concurrent pulls)
   const cloudPullComplete = useRef(null); // uid we've actually FINISHED pulling for (gates the push effect)
   const localUpdatedAtRef = useRef(0);    // epoch ms — when local data last actually changed (see init() and the pull effect)
+  const skipNextLocalStampRef = useRef(false); // true right after a deliberate reset (sign-out) — see resetLocalStateToBlank
   const hydrated = useRef(false);
 
   useEffect(() => { init(); }, []);
@@ -345,12 +346,21 @@ export default function App() {
   // access) can set it. That's what makes "isSubscribed" trustworthy now
   // instead of just a local flag anyone could flip in dev tools.
   const [cloudBilling, setCloudBilling] = useState(null); // { subEnd, lastPaymentAt, lastBillCode } | null
+  const [billingListenerError, setBillingListenerError] = useState("");
   useEffect(() => {
-    if (!signedIn) { setCloudBilling(null); return; }
+    if (!signedIn) { setCloudBilling(null); setBillingListenerError(""); return; }
     const uid = auth.currentUser?.uid;
     if (!uid) return;
     const ref = doc(db, "users", uid, "private", "billing");
-    const unsub = onSnapshot(ref, (snap) => setCloudBilling(snap.exists() ? snap.data() : null), (err) => console.error("Billing listener error:", err));
+    const unsub = onSnapshot(
+      ref,
+      (snap) => { setCloudBilling(snap.exists() ? snap.data() : null); setBillingListenerError(""); },
+      (err) => {
+        console.error("Billing listener error:", err);
+        setBillingListenerError(firestoreErrorMessage(err));
+        showToast(`Plus status error: ${firestoreErrorMessage(err)}`);
+      }
+    );
     return () => unsub();
   }, [signedIn]);
 
@@ -652,6 +662,7 @@ export default function App() {
   // doesn't itself get counted as a fresh "local change".
   useEffect(() => {
     if (!hydrated.current) return;
+    if (skipNextLocalStampRef.current) { skipNextLocalStampRef.current = false; return; }
     const t = Date.now();
     localUpdatedAtRef.current = t;
     store.set("mc26-lastlocalupdate", String(t)).catch(() => {});
@@ -693,6 +704,13 @@ export default function App() {
   // Out" first — like any browser-based local storage, handing an unlocked,
   // still-signed-in device to someone else bypasses this entirely.
   const resetLocalStateToBlank = async () => {
+    // Flags this batch of state changes as a deliberate wipe, not a genuine
+    // edit — see skipNextLocalStampRef above. Without this, the wipe itself
+    // gets timestamped as "the most recent change," and signing back in would
+    // see that fresh timestamp, conclude local is newer than the cloud, and
+    // PUSH the blank data up — overwriting real cloud data with the wipe.
+    skipNextLocalStampRef.current = true;
+    localUpdatedAtRef.current = 0;
     setReceipts([]); setIncome(""); setOtherIncomeAmt("0"); setEpfAmt(""); setPcbAmt(""); setSocsoAmt(""); setZakatAmt("0"); setIsSelfOKU(false);
     setMaritalStatus("single"); setSpouseInc(""); setSpouseEpfAmt(""); setSpouseEpfTouched(false); setSpouseSocsoAmt(""); setSpousePcbAmt(""); setSpouseDisabled(false); setSpouseName("Spouse"); setChildrenClaimedBy("mine");
     setChildU18(0); setChildHiEduDegree(0); setChildHiEduOther(0); setChildDisabled(0); setChildDisabledHiEdu(0); setHomeLoanTier("under500k");
@@ -702,6 +720,7 @@ export default function App() {
       await store.set("mc26-receipts", JSON.stringify([]));
       await store.set("mc26-income", JSON.stringify({}));
       await store.set("mc26-settings", JSON.stringify({ clientName: "" }));
+      await store.set("mc26-lastlocalupdate", "0");
     } catch {}
   };
 
