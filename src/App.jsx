@@ -597,11 +597,27 @@ export default function App() {
             await setDoc(ref, buildCloudSnapshot(), { merge: true });
             showToast("Local changes synced to cloud ✓");
           } else {
+            // Restoring from the cloud is not itself a new local edit — skip
+            // the next automatic timestamp stamp so this restoration doesn't
+            // get mistaken for a fresh change on the NEXT comparison.
+            skipNextLocalStampRef.current = true;
             setReceipts(d.receipts || []); setIncome(d.income ?? ""); setOtherIncomeAmt(d.otherIncomeAmt ?? "0"); setEpfAmt(d.epfAmt ?? ""); setSocsoAmt(d.socsoAmt ?? "350"); setPcbAmt(d.pcbAmt ?? ""); setZakatAmt(d.zakatAmt ?? "0"); setIsSelfOKU(d.isSelfOKU || false);
             setMaritalStatus(d.maritalStatus || "single"); setSpouseInc(d.spouseInc ?? ""); setSpouseEpfAmt(d.spouseEpfAmt ?? ""); setSpouseSocsoAmt(d.spouseSocsoAmt ?? "350"); setSpousePcbAmt(d.spousePcbAmt ?? ""); setSpouseDisabled(!!d.spouseDisabled); setSpouseName(d.spouseName || "Spouse"); setChildrenClaimedBy(d.childrenClaimedBy || "mine");
             if (d.spouseEpfAmt) setSpouseEpfTouched(true);
             setChildU18(d.childU18 ?? 0); setChildHiEduDegree(d.childHiEduDegree ?? 0); setChildHiEduOther(d.childHiEduOther ?? 0); setChildDisabled(d.childDisabled ?? 0); setChildDisabledHiEdu(d.childDisabledHiEdu ?? 0); setHomeLoanTier(d.homeLoanTier || "under500k");
             setClientName(d.clientName || "");
+            // Mirror the restored data into local storage too — without this,
+            // React state is correct but the local CACHE stays stale, so the
+            // next page reload briefly shows the old/blank cache before a
+            // fresh network pull corrects it a moment later. That transient
+            // flash is exactly what looked like "receipts disappeared."
+            localUpdatedAtRef.current = cloudUpdatedAt;
+            try {
+              await store.set("mc26-receipts", JSON.stringify(d.receipts || []));
+              await store.set("mc26-income", JSON.stringify({ income: d.income, otherIncomeAmt: d.otherIncomeAmt, epf: d.epfAmt, socsoAmt: d.socsoAmt, pcbAmt: d.pcbAmt, zakatAmt: d.zakatAmt, isSelfOKU: d.isSelfOKU, maritalStatus: d.maritalStatus, spouseInc: d.spouseInc, spouseEpfAmt: d.spouseEpfAmt, spouseSocsoAmt: d.spouseSocsoAmt, spousePcbAmt: d.spousePcbAmt, spouseDisabled: d.spouseDisabled, spouseName: d.spouseName, childU18: d.childU18, childHiEduDegree: d.childHiEduDegree, childHiEduOther: d.childHiEduOther, childDisabled: d.childDisabled, childDisabledHiEdu: d.childDisabledHiEdu, homeLoanTier: d.homeLoanTier, childrenClaimedBy: d.childrenClaimedBy }));
+              await store.set("mc26-settings", JSON.stringify({ clientName: d.clientName || "" }));
+              await store.set("mc26-lastlocalupdate", String(cloudUpdatedAt));
+            } catch {}
             showToast("Cloud data loaded ✓");
           }
         } else {
@@ -1185,6 +1201,15 @@ export default function App() {
       {toast && (
         <div className="fixed bottom-5 right-5 z-[100] bg-gray-900 text-white px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-2 text-xs font-semibold animate-bounce">
           <CheckCircle2 className="w-4 h-4 text-pink-400" />{toast}
+        </div>
+      )}
+
+      {/* Cloud Sync Loading Indicator — makes the brief window while data is
+          being pulled from Firestore on load VISIBLE, instead of a silent
+          gap that can look identical to "my data is gone" on a fast reload. */}
+      {cloudSyncStatus === "loading" && (
+        <div className="bg-violet-600 text-white text-center text-xs font-bold py-2 px-4 flex items-center justify-center gap-2">
+          <RefreshCw className="w-3.5 h-3.5 animate-spin" /> Syncing your data…
         </div>
       )}
 
