@@ -111,9 +111,9 @@ const BRACKETS  = [
 ];
 
 const SLIDES = [
-  { badge: "🗂️ SMART TAX VAULT",   headline: "STRESS-FREE\ne-FILING YA 2026", body: "Store LHDN receipts securely with full Budget 2026 updates (CCTV, Transit & Tourism). Be audit-ready for 7 years.", bg: "from-emerald-950 via-teal-900 to-gray-900" },
-  { badge: "💡 SMART SUGGESTIONS", headline: "MAXIMIZE YOUR\nREFUNDS", body: "Tax Diary flags unclaimed YA 2026 opportunities and calculates exact ringgit tax savings in real-time.", bg: "from-teal-950 via-gray-900 to-emerald-950" },
-  { badge: "👑 TRY VAULT FREE",    headline: "7 DAYS FREE\nTHEN RM19/YR", body: "Unlock AI receipt scanning, the Audit-Ready Checklist, Form BE sheet & multi-device cloud sync.", bg: "from-gray-950 via-emerald-950 to-teal-950" },
+  { badge: "🗂️ SMART TAX VAULT",   headline: "STRESS-FREE\ne-FILING YA 2026", body: "Store LHDN receipts securely with full Budget 2026 updates (CCTV, Transit & Tourism). Be audit-ready for 7 years.", bg: "from-emerald-800 via-teal-700 to-slate-900" },
+  { badge: "💡 SMART SUGGESTIONS", headline: "MAXIMIZE YOUR\nREFUNDS", body: "Tax Diary flags unclaimed YA 2026 opportunities and calculates exact ringgit tax savings in real-time.", bg: "from-teal-800 via-emerald-800 to-slate-900" },
+  { badge: "👑 TRY VAULT FREE",    headline: "7 DAYS FREE\nTHEN RM19/YR", body: "Unlock AI receipt scanning, the Audit-Ready Checklist, Form BE sheet & multi-device cloud sync.", bg: "from-slate-900 via-emerald-800 to-teal-800" },
 ];
 
 const DAY = 86400000;
@@ -1469,7 +1469,7 @@ export default function App() {
 
           <div className="border-b border-emerald-100 pb-4 relative">
             <h1 className="text-xl sm:text-2xl font-black tracking-tight text-gray-800">Salam{clientName ? `, ${clientName}` : ""} 👋</h1>
-            <p className="text-xs text-teal-500/80 font-semibold">Track YA {taxYear} reliefs · Log receipts · Maximize your refund before 31 Dec {taxYear}</p>
+            <p className="text-xs text-emerald-600/80 font-semibold">Track YA {taxYear} reliefs · Log receipts · Maximize your refund before 31 Dec {taxYear}</p>
           </div>
           <div className="grid grid-cols-2 gap-3 relative">
             <div className={`bg-gradient-to-br ${myBalance <= 0 ? "from-emerald-50 to-rose-50 border-emerald-200" : "from-amber-50 to-orange-50 border-amber-200"} border p-3 rounded-2xl`}>
@@ -1698,7 +1698,7 @@ export default function App() {
               <div className="flex items-center gap-2 text-amber-300 font-bold text-xs border-b border-white/10 pb-2"><Archive className="w-4 h-4" /> LHDN 7-Year Vault Compliance</div>
               <p className="text-xs text-gray-300 leading-relaxed">Section 82A, ITA 1967: retain all receipts for <strong>7 years</strong> after the relevant YA.</p>
               <button onClick={() => { setShowTools(false); openVault(() => setShowTools(true)); }} className="w-full py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 border border-white/20 transition"><Archive className="w-3.5 h-3.5" /> Manage Vault Years</button>
-              <a href="https://mytax.hasil.gov.my" target="_blank" rel="noreferrer" className="w-full py-2 bg-emerald-700 hover:bg-emerald-600 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition"><ExternalLink className="w-3.5 h-3.5" /> MyTax Official Portal</a>
+              <a href="https://mytax.hasil.gov.my" target="_blank" rel="noreferrer" className="w-full py-2 bg-gradient-to-r from-emerald-700 to-teal-600 hover:from-emerald-800 hover:to-teal-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition"><ExternalLink className="w-3.5 h-3.5" /> MyTax Official Portal</a>
             </div>
 
 
