@@ -1462,28 +1462,38 @@ export default function App() {
 
       <main className="flex-1 max-w-6xl w-full mx-auto p-4 space-y-4 pb-24">
 
-        {/* Hero Banner */}
-        <div className="bg-gradient-to-br from-amber-600 via-orange-500 to-yellow-500 backdrop-blur-md rounded-3xl p-5 sm:p-6 shadow-xl border border-amber-300/70 relative overflow-hidden space-y-4">
-          <div className="absolute -top-10 -right-10 w-32 h-32 bg-amber-400/15 rounded-full blur-2xl pointer-events-none" />
-          <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-amber-400/15 rounded-full blur-2xl pointer-events-none" />
-
+{/* Hero Banner */}
+<div className="bg-gradient-to-br from-[#8C6D1F] via-[#D4A017] to-[#D4AF37] backdrop-blur-md rounded-3xl p-5 sm:p-6 shadow-xl border border-[#D4AF37]/40 relative overflow-hidden space-y-4">
+  <div className="absolute -top-10 -right-10 w-32 h-32 bg-[#FFFDF6]/15 rounded-full blur-2xl pointer-events-none" />
+  <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-[#FFFDF6]/10 rounded-full blur-2xl pointer-events-none" />
+  
           <div className="border-b border-white/20 pb-4 relative">
-            <h1 className="text-xl sm:text-2xl font-black tracking-tight text-white">Salam{clientName ? `, ${clientName}` : ""} 👋</h1>
-            <p className="text-xs text-yellow-100 font-semibold">Track YA {taxYear} reliefs · Log receipts · Maximize your refund before 31 Dec {taxYear}</p>
-          </div>
-          <div className="grid grid-cols-2 gap-3 relative">
-            <div className={`bg-gradient-to-br ${myBalance <= 0 ? "from-amber-50 to-rose-50 border-amber-200" : "from-amber-50 to-orange-50 border-amber-200"} border p-3 rounded-2xl`}>
-              <p className={`text-[10px] font-black uppercase tracking-wider ${myBalance <= 0 ? "text-orange-600" : "text-orange-600"}`}>{myBalance <= 0 ? "Est. Refund" : "Est. Balance Owed"}</p>
-              <p className={`text-lg sm:text-2xl font-black mt-0.5 ${myBalance <= 0 ? "text-orange-600" : "text-orange-600"}`}>{fmt(Math.abs(myBalance), 0)}</p>
-              <p className={`text-[10px] font-medium opacity-70 ${myBalance <= 0 ? "text-orange-600" : "text-orange-600"}`}>vs PCB already paid</p>
-            </div>
-            <div className="bg-gradient-to-br from-amber-50 to-amber-50 border border-amber-200 p-3 rounded-2xl">
-              <p className="text-[10px] font-black uppercase tracking-wider text-orange-600">Total Reliefs Claimed</p>
-              <p className="text-lg sm:text-2xl font-black mt-0.5 text-orange-600">RM {totalReliefs.toLocaleString()}</p>
-              <p className="text-[10px] font-medium opacity-70 text-orange-600">Chargeable income: RM {chargeable.toLocaleString()}</p>
-            </div>
-          </div>
-        </div>
+  <h1 className="text-xl sm:text-2xl font-black tracking-tight text-white">Salam{clientName ? `, ${clientName}` : ""} 👋</h1>
+  <p className="text-xs text-yellow-100 font-semibold">Track YA {taxYear} reliefs · Log receipts · Maximize your refund before 31 Dec {taxYear}</p>
+</div>
+
+<div className="grid grid-cols-2 gap-3 relative">
+  {/* Left Card: Est. Refund / Balance Owed */}
+  <div className={`bg-gradient-to-br ${myBalance <= 0 ? "from-[#FFFDF6] to-[#FFF9E6] border-[#D4AF37]/40" : "from-[#FFFDF6] to-[#FFF5F5] border-[#D4AF37]/40"} border p-3 rounded-2xl`}>
+    <p className="text-[10px] font-black uppercase tracking-wider text-[#6B5214]">
+      {myBalance <= 0 ? "Est. Refund" : "Est. Balance Owed"}
+    </p>
+    <p className="text-lg sm:text-2xl font-black mt-0.5 text-[#6B5214]">
+      {fmt(Math.abs(myBalance), 0)}
+    </p>
+    <p className="text-[10px] font-semibold opacity-80 text-[#8C6D1F]">
+      vs PCB already paid
+    </p>
+  </div>
+
+  {/* Right Card: Total Reliefs Claimed */}
+  <div className="bg-gradient-to-br from-[#FFFDF6] to-[#FFF9E6] border border-[#D4AF37]/40 p-3 rounded-2xl">
+    <p className="text-[10px] font-black uppercase tracking-wider text-[#6B5214]">Total Reliefs Claimed</p>
+    <p className="text-lg sm:text-2xl font-black mt-0.5 text-[#6B5214]">RM {totalReliefs.toLocaleString()}</p>
+    <p className="text-[10px] font-semibold opacity-80 text-[#8C6D1F]">Chargeable income: RM {chargeable.toLocaleString()}</p>
+  </div>
+</div>
+
 
         {taxYear === 2026 && (
           <div className={`bg-white p-4 rounded-3xl border shadow-sm space-y-2 ${daysLeft <= 30 ? "border-red-200" : daysLeft <= 90 ? "border-orange-200" : "border-gray-200"}`}>
@@ -1500,9 +1510,13 @@ export default function App() {
         )}
 
         {/* Quick Actions */}
-        <button onClick={() => { setForm(blank(taxYear)); setEditId(null); setShowReceipt(true); }} className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-amber-600 to-yellow-500 hover:from-amber-700 hover:to-amber-600 text-white font-bold text-sm shadow flex items-center justify-center gap-2 active:scale-95 transition">
-          <Plus className="w-4 h-4" /> Add Receipt
-        </button>
+<button 
+  onClick={() => { setForm(blank(taxYear)); setEditId(null); setShowReceipt(true); }} 
+  className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-[#D4A017] to-[#E5C158] hover:from-[#B88B11] hover:to-[#D4A017] text-white font-black text-sm shadow-md hover:shadow-lg flex items-center justify-center gap-2 active:scale-98 transition duration-200"
+>
+  <Plus className="w-4 h-4 stroke-[3]" /> Add Receipt
+</button>
+  
 
         {/* Main Content Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
