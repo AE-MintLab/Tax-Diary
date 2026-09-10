@@ -113,7 +113,7 @@ const BRACKETS  = [
 const SLIDES = [
   { badge: "🗂️ SMART TAX VAULT",   headline: "STRESS-FREE\ne-FILING YA 2026", body: "Store LHDN receipts securely with full Budget 2026 updates (CCTV, Transit & Tourism). Be audit-ready for 7 years.", bg: "from-emerald-800 via-teal-700 to-slate-900" },
   { badge: "💡 SMART SUGGESTIONS", headline: "MAXIMIZE YOUR\nREFUNDS", body: "Tax Diary flags unclaimed YA 2026 opportunities and calculates exact ringgit tax savings in real-time.", bg: "from-teal-800 via-emerald-800 to-slate-900" },
-  { badge: "👑 TRY VAULT FREE",    headline: "7 DAYS FREE\nTHEN RM19/YR", body: "Unlock AI receipt scanning, the Audit-Ready Checklist, Form BE sheet & multi-device cloud sync.", bg: "from-slate-900 via-emerald-800 to-teal-800" },
+  { badge: "👑 TRY VAULT FREE",    headline: "7 DAYS FREE\nTHEN RM19/YR", body: "Unlock AI receipt scanning, the Audit-Ready Checklist, Form BE sheet & multi-device cloud sync.", bg: "from-slate-950 via-emerald-800 to-teal-800" },
 ];
 
 const DAY = 86400000;
@@ -1377,7 +1377,7 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-slate-50 to-teal-50 font-sans flex flex-col">
+    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-slate-50 to-teal-100 font-sans flex flex-col">
       {toast && (
         <div className="fixed bottom-5 right-5 z-[100] bg-gray-900 text-white px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-2 text-xs font-semibold animate-bounce">
           <CheckCircle2 className="w-4 h-4 text-emerald-400" />{toast}
@@ -1417,7 +1417,7 @@ export default function App() {
           ) : (
             <>
               <span>Install Tax Diary for quick, offline access</span>
-              <button onClick={handleInstallClick} className="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 rounded-lg">Install</button>
+              <button onClick={handleInstallClick} className="px-3 py-1 bg-gradient-to-r from-emerald-600 to-teal-600 hover:bg-emerald-500 rounded-lg">Install</button>
             </>
           )}
           <button onClick={dismissInstallBanner} className="text-gray-400 hover:text-white ml-1"><X className="w-3.5 h-3.5" /></button>
@@ -1491,7 +1491,7 @@ export default function App() {
               <span className="flex items-center gap-1.5"><Calendar className="w-4 h-4 text-emerald-600" /> YA 2026 Planning Window</span>
               <span className={daysLeft <= 30 ? "text-red-600" : daysLeft <= 90 ? "text-orange-500" : "text-gray-600"}>{daysLeft > 0 ? `${daysLeft} days to 31 Dec 2026` : "Year closed"}</span>
             </div>
-            <div className="bg-gray-100 h-2.5 rounded-full overflow-hidden"><div className={`h-full rounded-full ${daysLeft <= 30 ? "bg-red-500" : daysLeft <= 90 ? "bg-orange-400" : "bg-emerald-600"}`} style={{ width: `${yearPct}%` }} /></div>
+            <div className="bg-gray-100 h-2.5 rounded-full overflow-hidden"><div className={`h-full rounded-full ${daysLeft <= 30 ? "bg-red-500" : daysLeft <= 90 ? "bg-orange-400" : "bg-gradient-to-r from-emerald-600 to-teal-600"}`} style={{ width: `${yearPct}%` }} /></div>
             <div className="flex justify-between text-xs text-gray-500">
               <span>{opps.length} relief opportunities unfulfilled</span>
               <span className="font-bold text-emerald-700">RM {opps.reduce((s, c) => s + c.rem, 0).toLocaleString()} available</span>
@@ -1500,7 +1500,7 @@ export default function App() {
         )}
 
         {/* Quick Actions */}
-        <button onClick={() => { setForm(blank(taxYear)); setEditId(null); setShowReceipt(true); }} className="w-full py-3.5 px-4 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm shadow flex items-center justify-center gap-2 active:scale-95 transition">
+        <button onClick={() => { setForm(blank(taxYear)); setEditId(null); setShowReceipt(true); }} className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:bg-emerald-500 text-white font-bold text-sm shadow flex items-center justify-center gap-2 active:scale-95 transition">
           <Plus className="w-4 h-4" /> Add Receipt
         </button>
 
@@ -1694,11 +1694,11 @@ export default function App() {
             </div>
 
             {/* Compliance & Vault Years */}
-            <div className="bg-gradient-to-br from-gray-900 to-emerald-950 rounded-3xl p-5 text-white shadow-md space-y-3">
+            <div className="bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950 rounded-3xl p-5 text-white shadow-md space-y-3">
               <div className="flex items-center gap-2 text-amber-300 font-bold text-xs border-b border-white/10 pb-2"><Archive className="w-4 h-4" /> LHDN 7-Year Vault Compliance</div>
               <p className="text-xs text-gray-300 leading-relaxed">Section 82A, ITA 1967: retain all receipts for <strong>7 years</strong> after the relevant YA.</p>
               <button onClick={() => { setShowTools(false); openVault(() => setShowTools(true)); }} className="w-full py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 border border-white/20 transition"><Archive className="w-3.5 h-3.5" /> Manage Vault Years</button>
-              <a href="https://mytax.hasil.gov.my" target="_blank" rel="noreferrer" className="w-full py-2 bg-gradient-to-r from-emerald-700 to-teal-600 hover:from-emerald-800 hover:to-teal-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition"><ExternalLink className="w-3.5 h-3.5" /> MyTax Official Portal</a>
+              <a href="https://mytax.hasil.gov.my" target="_blank" rel="noreferrer" className="w-full py-2 bg-gradient-to-r from-emerald-700 to-teal-700 hover:from-emerald-800 hover:to-teal-800 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition"><ExternalLink className="w-3.5 h-3.5" /> MyTax Official Portal</a>
             </div>
 
 
@@ -1714,7 +1714,7 @@ export default function App() {
               <h3 className="font-bold text-base flex items-center gap-2"><ShieldCheck className="w-5 h-5 text-emerald-600" /> Audit-Ready Checklist</h3>
               <button onClick={() => { setShowAuditCheck(false); setShowTools(true); }}><X className="w-5 h-5 text-gray-400" /></button>
             </div>
-            <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 text-center space-y-1">
+            <div className="bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-200 rounded-2xl p-4 text-center space-y-1">
               <p className="text-xs font-bold text-emerald-800">Documentation Score</p>
               <p className="text-3xl font-black text-emerald-700">{auditHealthScore.score}%</p>
               <p className="text-[11px] text-emerald-600">{auditHealthScore.score >= 90 ? "Nicely done — your claims are well documented." : "A few things worth tidying up before you file."}</p>
@@ -1754,7 +1754,7 @@ export default function App() {
                 </div>
               )}
             </div>
-            <button onClick={exportPDF} className="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold rounded-2xl text-xs flex items-center justify-center gap-2 shadow">
+            <button onClick={exportPDF} className="w-full py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:bg-emerald-500 text-white font-extrabold rounded-2xl text-xs flex items-center justify-center gap-2 shadow">
               <FileText className="w-4 h-4" /> Download Checklist Summary (PDF)
             </button>
           </div>
@@ -1796,7 +1796,7 @@ export default function App() {
               </div>
 
               {scenarioCalc.isConnected ? (
-                <div className="p-3.5 bg-emerald-50 border border-emerald-200 rounded-2xl space-y-2">
+                <div className="p-3.5 bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-200 rounded-2xl space-y-2">
                   <p className="text-xs font-bold text-emerald-800 flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4" /> Included in your tax calculation</p>
                   <p className="text-[11px] text-emerald-700">Your dashboard, refund/owed, and Spouse tab all currently include this RM {scenarioCalc.netOther.toLocaleString()} as real income.</p>
                   <button onClick={() => setOtherIncomeAmt("0")} className="w-full py-2 rounded-xl bg-white border border-emerald-300 text-emerald-700 font-bold text-xs">Remove From My Tax Calculation</button>
@@ -1861,11 +1861,11 @@ export default function App() {
               </div>
               {!trialUsed ? (
                 <div className="space-y-2">
-                  <button onClick={startTrial} disabled={paymentLoading} className="w-full py-3.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-extrabold transition shadow-md">Start 7-Day Free Trial</button>
+                  <button onClick={startTrial} disabled={paymentLoading} className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-extrabold transition shadow-md">Start 7-Day Free Trial</button>
                   <button onClick={subscribe} disabled={paymentLoading} className="w-full py-2.5 rounded-2xl bg-gray-100 hover:bg-gray-200 disabled:opacity-50 text-gray-700 font-bold text-xs transition">{paymentLoading ? "Redirecting to payment…" : `Skip trial, subscribe now — RM${PRICE.toFixed(2)}/yr`}</button>
                 </div>
               ) : (
-                <button onClick={subscribe} disabled={paymentLoading} className="w-full py-3.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-extrabold transition shadow-md">{paymentLoading ? "Redirecting to payment…" : `Subscribe to Plus — RM${PRICE.toFixed(2)}/yr`}</button>
+                <button onClick={subscribe} disabled={paymentLoading} className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-extrabold transition shadow-md">{paymentLoading ? "Redirecting to payment…" : `Subscribe to Plus — RM${PRICE.toFixed(2)}/yr`}</button>
               )}
               {isTrialing ? (
                 <p className="text-center text-[11px] text-gray-400">Your free trial is active for {trialDaysLeft} more day{trialDaysLeft !== 1 ? "s" : ""} — subscribe anytime to keep Plus after it ends.</p>
@@ -1896,7 +1896,7 @@ export default function App() {
           <div className="bg-white rounded-3xl max-w-md w-full shadow-2xl mx-auto my-8 overflow-hidden" onClick={(e) => e.stopPropagation()}>
             <div className="p-5 border-b border-gray-100 flex items-center justify-between bg-gray-50">
               <div className="flex items-center gap-2.5">
-                <div className="p-2.5 bg-emerald-100 text-emerald-700 rounded-2xl shrink-0"><Sparkles className="w-5 h-5" /></div>
+                <div className="p-2.5 bg-gradient-to-r from-emerald-100 to-teal-100 text-emerald-700 rounded-2xl shrink-0"><Sparkles className="w-5 h-5" /></div>
                 <div>
                   <h3 className="font-black text-gray-900 text-base leading-tight">Form BE Auto-Copy Helper</h3>
                   <p className="text-[11px] text-gray-500">Tahun Taksiran {taxYear} · Form BE / MyTax Direct Mapping</p>
@@ -1983,7 +1983,7 @@ export default function App() {
                   const ct = receipts.filter(r => (r.taxYear || 2026) === y).length;
                   const locked = y !== 2026 && !isPro;
                   return (
-                    <button key={y} onClick={() => locked ? openPaywall("7-Year Vault Access", "Free plan only covers the current tax year. Upgrade to view and export past years.", () => openVault()) : setTaxYear(y)} className={`shrink-0 p-2 rounded-xl border text-center transition relative min-w-[64px] ${taxYear === y ? "bg-emerald-600 text-white border-emerald-700 font-extrabold" : locked ? "bg-gray-50 text-gray-400 border-gray-200" : "bg-white text-gray-700 border-gray-200 hover:bg-gray-100 font-bold"}`}>
+                    <button key={y} onClick={() => locked ? openPaywall("7-Year Vault Access", "Free plan only covers the current tax year. Upgrade to view and export past years.", () => openVault()) : setTaxYear(y)} className={`shrink-0 p-2 rounded-xl border text-center transition relative min-w-[64px] ${taxYear === y ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white border-emerald-700 font-extrabold" : locked ? "bg-gray-50 text-gray-400 border-gray-200" : "bg-white text-gray-700 border-gray-200 hover:bg-gray-100 font-bold"}`}>
                       {locked && <Lock className="w-3 h-3 absolute top-1 right-1 text-amber-500" />}
                       <span className="block text-[11px]">YA {y}</span>
                       <span className="block text-[9px] opacity-80">{ct} receipts</span>
@@ -2009,7 +2009,7 @@ export default function App() {
                   <p className="text-xs font-bold text-gray-600">No receipts for YA {taxYear}</p>
                   <p className="text-[11px] text-gray-400">Add receipts or use AI OCR to scan and auto-fill.</p>
                   <div className="flex gap-2 justify-center pt-1">
-                    <button onClick={() => { setForm(blank(taxYear)); setShowVault(false); openReceiptModal(() => setShowVault(true)); }} className="px-4 py-2 bg-emerald-600 text-white rounded-xl text-xs font-bold inline-flex items-center gap-1"><Plus className="w-3.5 h-3.5" /> Add</button>
+                    <button onClick={() => { setForm(blank(taxYear)); setShowVault(false); openReceiptModal(() => setShowVault(true)); }} className="px-4 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-xl text-xs font-bold inline-flex items-center gap-1"><Plus className="w-3.5 h-3.5" /> Add</button>
                     <button onClick={() => isPro ? (() => { setShowVault(false); setReceiptReturnTo(() => () => setShowVault(true)); openScan(() => setShowReceipt(true)); })() : (() => { setShowVault(false); openPaywall("AI Receipt Scanner", "Snap a receipt and let AI fill in the details for you.", () => setShowVault(true)); })()} className="px-4 py-2 bg-gray-800 text-white rounded-xl text-xs font-bold inline-flex items-center gap-1">{isPro ? <Zap className="w-3.5 h-3.5 text-emerald-400" /> : <Lock className="w-3.5 h-3.5 text-amber-400" />} AI Scan</button>
                   </div>
                 </div>
@@ -2194,7 +2194,7 @@ export default function App() {
                     <p className="font-bold text-gray-800 text-sm">Registered OKU (Disabled)</p>
                     <p className="text-[11px] text-gray-500">Adds RM7,000 personal disability relief on top of your RM9,000 self relief</p>
                   </div>
-                  <button onClick={() => setIsSelfOKU(!isSelfOKU)} className={`w-12 h-6 rounded-full flex items-center p-1 transition-colors shrink-0 ml-3 ${isSelfOKU ? "bg-emerald-600 justify-end" : "bg-gray-300 justify-start"}`}><span className="w-4 h-4 bg-white rounded-full shadow" /></button>
+                  <button onClick={() => setIsSelfOKU(!isSelfOKU)} className={`w-12 h-6 rounded-full flex items-center p-1 transition-colors shrink-0 ml-3 ${isSelfOKU ? "bg-gradient-to-r from-emerald-600 to-teal-600 justify-end" : "bg-gray-300 justify-start"}`}><span className="w-4 h-4 bg-white rounded-full shadow" /></button>
                 </div>
               </div>
             )}
@@ -2228,7 +2228,7 @@ export default function App() {
                   {hasSpouse && (
                     <div className="flex items-center justify-between text-xs pl-3 border-l-2 border-emerald-100">
                       <div><p className="font-bold">Certified Disabled Spouse</p><p className="text-gray-400">+RM 6,000 (JKM-certified, Joint Assessment only)</p></div>
-                      <button onClick={() => setSpouseDisabled(!spouseDisabled)} className={`w-12 h-6 rounded-full flex items-center p-1 transition-colors ${spouseDisabled ? "bg-emerald-600 justify-end" : "bg-gray-300 justify-start"}`}><span className="w-4 h-4 bg-white rounded-full shadow" /></button>
+                      <button onClick={() => setSpouseDisabled(!spouseDisabled)} className={`w-12 h-6 rounded-full flex items-center p-1 transition-colors ${spouseDisabled ? "bg-gradient-to-r from-emerald-600 to-teal-600 justify-end" : "bg-gray-300 justify-start"}`}><span className="w-4 h-4 bg-white rounded-full shadow" /></button>
                     </div>
                   )}
                   {[["Children under 18", "RM 2,000 each", childU18, setChildU18], ["Children Higher Edu (Diploma+/Degree/Masters/PhD)", "RM 8,000 each", childHiEduDegree, setChildHiEduDegree], ["Children Higher Edu (other full-time study)", "RM 2,000 each", childHiEduOther, setChildHiEduOther], ["Disabled Child", "RM 8,000 each", childDisabled, setChildDisabled], ["Disabled Child in Higher Edu", "+RM 8,000 more each", childDisabledHiEdu, setChildDisabledHiEdu]].map(([l, s, v, sv]) => (
@@ -2259,7 +2259,7 @@ export default function App() {
                   )}
                 </div>
 
-                <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 space-y-2 text-xs">
+                <div className="p-4 rounded-2xl bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-200 space-y-2 text-xs">
                   <div className="flex justify-between font-bold"><span>Tax without reliefs:</span><span>{fmt(taxBefore)}</span></div>
                   <div className="flex justify-between font-bold text-emerald-700"><span>Tax payable (with reliefs):</span><span>{fmt(taxAfter)}</span></div>
                   {parseFloat(zakatAmt) > 0 && (
@@ -2317,7 +2317,7 @@ export default function App() {
                         </div>
                       </div>
                     )}
-                    <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 space-y-3 text-xs">
+                    <div className="p-4 rounded-2xl bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-200 space-y-3 text-xs">
                       <p className="font-bold text-emerald-900 text-sm">Quick Comparison:</p>
                       <div className="flex justify-between p-2 rounded-xl bg-white/60 border border-emerald-100"><span className="text-gray-600">Joint Filing Tax:</span><span className="font-extrabold text-rose-600">RM {spouseAnalysisDetailed.joint.totalTax.toLocaleString()}</span></div>
                       <div className="flex justify-between p-2 rounded-xl bg-white/60 border border-emerald-100"><span className="text-gray-600">Separate Filing:</span><span className="font-extrabold text-emerald-700">RM {spouseAnalysisDetailed.separate.totalTax.toLocaleString()}</span></div>
@@ -2328,7 +2328,7 @@ export default function App() {
                     </div>
 
                     <div className="border-t border-gray-100 pt-4">
-                      <button onClick={() => { setShowSettings(false); setShowSpouseDetail(true); }} className="w-full py-2.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold text-xs border border-emerald-200 flex items-center justify-center gap-1.5">
+                      <button onClick={() => { setShowSettings(false); setShowSpouseDetail(true); }} className="w-full py-2.5 rounded-xl bg-emerald-50 hover:bg-gradient-to-r from-emerald-100 to-teal-100 text-emerald-700 font-bold text-xs border border-emerald-200 flex items-center justify-center gap-1.5">
                         <Crown className="w-3.5 h-3.5 text-amber-500" /> See Full Household Comparison
                       </button>
                     </div>
@@ -2376,7 +2376,7 @@ export default function App() {
                         <button onClick={() => { setShowSettings(false); openPaywall("Multi-Device Cloud Sync", "Your account's ready — subscribe to enable syncing.", () => openSettings("sync")); }} className="w-full py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold">Unlock Device Sync</button>
                       </div>
                     ) : (
-                      <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-200 space-y-3">
+                      <div className="p-4 bg-gradient-to-br from-emerald-50 to-teal-50 rounded-2xl border border-emerald-200 space-y-3">
                         <div className="flex items-center justify-between">
                           <span className="font-extrabold text-sm text-emerald-900 flex items-center gap-1.5"><Smartphone className="w-4 h-4" /> Cloud Sync</span>
                         </div>
@@ -2394,7 +2394,7 @@ export default function App() {
               </div>
             )}
 
-            <button onClick={saveAll} className="w-full py-3.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold transition shadow-md">Save Settings</button>
+            <button onClick={saveAll} className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:bg-emerald-500 text-white font-extrabold transition shadow-md">Save Settings</button>
           </div>
         </div>
       )}
@@ -2420,7 +2420,7 @@ export default function App() {
                   <p className="text-sm font-bold text-gray-700">Upload or photograph your receipt</p>
                   <p className="text-xs text-gray-500">AI automatically detects CCTV, transit care, theme parks, NPRA vaccines & traditional claims.</p>
                   <label className="cursor-pointer inline-block">
-                    <div className="px-6 py-2.5 rounded-xl bg-emerald-600 text-white font-bold text-xs hover:bg-emerald-500 transition inline-flex items-center gap-2"><Upload className="w-4 h-4" /> Choose Receipt Photo</div>
+                    <div className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold text-xs hover:bg-emerald-500 transition inline-flex items-center gap-2"><Upload className="w-4 h-4" /> Choose Receipt Photo</div>
                     <input type="file" accept="image/*" onChange={handleOCRUpload} className="hidden" />
                   </label>
                 </div>
@@ -2488,7 +2488,7 @@ export default function App() {
               </div>
               <div className="flex gap-2 pt-1">
                 <button onClick={closeReceiptModal} className="flex-1 py-2.5 rounded-xl bg-gray-100 text-gray-700 font-bold">Cancel</button>
-                <button onClick={editId ? handleUpdate : handleSave} className="flex-1 py-2.5 rounded-xl bg-emerald-600 text-white font-bold hover:bg-emerald-500">{editId ? "Update" : "Vault Receipt"}</button>
+                <button onClick={editId ? handleUpdate : handleSave} className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold hover:bg-emerald-500">{editId ? "Update" : "Vault Receipt"}</button>
               </div>
             </div>
           </div>
