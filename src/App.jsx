@@ -1466,33 +1466,37 @@ export default function App() {
 <div className="bg-gradient-to-br from-[#8C6D1F] via-[#D4A017] to-[#D4AF37] backdrop-blur-md rounded-3xl p-5 sm:p-6 shadow-xl border border-[#D4AF37]/40 relative overflow-hidden space-y-4">
   <div className="absolute -top-10 -right-10 w-32 h-32 bg-[#FFFDF6]/15 rounded-full blur-2xl pointer-events-none" />
   <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-[#FFFDF6]/10 rounded-full blur-2xl pointer-events-none" />
-  
-          <div className="border-b border-white/20 pb-4 relative">
-  <h1 className="text-xl sm:text-2xl font-black tracking-tight text-white">Salam{clientName ? `, ${clientName}` : ""} 👋</h1>
-  <p className="text-xs text-yellow-100 font-semibold">Track YA {taxYear} reliefs · Log receipts · Maximize your refund before 31 Dec {taxYear}</p>
-</div>
 
-<div className="grid grid-cols-2 gap-3 relative">
-  {/* Left Card: Est. Refund / Balance Owed */}
-  <div className={`bg-gradient-to-br ${myBalance <= 0 ? "from-[#FFFDF6] to-[#FFF9E6] border-[#D4AF37]/40" : "from-[#FFFDF6] to-[#FFF5F5] border-[#D4AF37]/40"} border p-3 rounded-2xl`}>
-    <p className="text-[10px] font-black uppercase tracking-wider text-[#6B5214]">
-      {myBalance <= 0 ? "Est. Refund" : "Est. Balance Owed"}
-    </p>
-    <p className="text-lg sm:text-2xl font-black mt-0.5 text-[#6B5214]">
-      {fmt(Math.abs(myBalance), 0)}
-    </p>
-    <p className="text-[10px] font-semibold opacity-80 text-[#8C6D1F]">
-      vs PCB already paid
-    </p>
+  {/* Header Section */}
+  <div className="border-b border-white/20 pb-4 relative">
+    <h1 className="text-xl sm:text-2xl font-black tracking-tight text-white">Salam{clientName ? `, ${clientName}` : ""} 👋</h1>
+    <p className="text-xs text-yellow-100 font-semibold">Track YA {taxYear} reliefs · Log receipts · Maximize your refund before 31 Dec {taxYear}</p>
   </div>
 
-  {/* Right Card: Total Reliefs Claimed */}
-  <div className="bg-gradient-to-br from-[#FFFDF6] to-[#FFF9E6] border border-[#D4AF37]/40 p-3 rounded-2xl">
-    <p className="text-[10px] font-black uppercase tracking-wider text-[#6B5214]">Total Reliefs Claimed</p>
-    <p className="text-lg sm:text-2xl font-black mt-0.5 text-[#6B5214]">RM {totalReliefs.toLocaleString()}</p>
-    <p className="text-[10px] font-semibold opacity-80 text-[#8C6D1F]">Chargeable income: RM {chargeable.toLocaleString()}</p>
+  {/* Inner Dashboard Cards Grid */}
+  <div className="grid grid-cols-2 gap-3 relative">
+    {/* Left Card: Est. Refund / Balance Owed */}
+    <div className={`bg-gradient-to-br ${myBalance <= 0 ? "from-[#FFFDF6] to-[#FFF9E6] border-[#D4AF37]/40" : "from-[#FFFDF6] to-[#FFF5F5] border-[#D4AF37]/40"} border p-3 rounded-2xl`}>
+      <p className="text-[10px] font-black uppercase tracking-wider text-[#6B5214]">
+        {myBalance <= 0 ? "Est. Refund" : "Est. Balance Owed"}
+      </p>
+      <p className="text-lg sm:text-2xl font-black mt-0.5 text-[#6B5214]">
+        {fmt(Math.abs(myBalance), 0)}
+      </p>
+      <p className="text-[10px] font-semibold opacity-80 text-[#8C6D1F]">
+        vs PCB already paid
+      </p>
+    </div>
+
+    {/* Right Card: Total Reliefs Claimed */}
+    <div className="bg-gradient-to-br from-[#FFFDF6] to-[#FFF9E6] border border-[#D4AF37]/40 p-3 rounded-2xl">
+      <p className="text-[10px] font-black uppercase tracking-wider text-[#6B5214]">Total Reliefs Claimed</p>
+      <p className="text-lg sm:text-2xl font-black mt-0.5 text-[#6B5214]">RM {totalReliefs.toLocaleString()}</p>
+      <p className="text-[10px] font-semibold opacity-80 text-[#8C6D1F]">Chargeable income: RM {chargeable.toLocaleString()}</p>
+    </div>
   </div>
 </div>
+        
 
 
         {taxYear === 2026 && (
