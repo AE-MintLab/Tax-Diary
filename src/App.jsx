@@ -6,7 +6,7 @@ import {
   ExternalLink, ArrowRight, Calendar, Camera, Zap, Smartphone, Laptop,
   Copy, RefreshCw, Link2, ShieldAlert, Crown, Lock, FileText, Clock,
   Mail, LogIn, PieChart, ClipboardCopy, Info, Sliders, ShieldCheck,
-  DollarSign, Home, Briefcase, LogOut, Eye, EyeOff, Baby
+  DollarSign, Home, Briefcase, LogOut, Eye, EyeOff
 } from "lucide-react";
 import { auth, db } from "./firebase";
 import {
@@ -111,34 +111,10 @@ const BRACKETS  = [
 ];
 
 const SLIDES = [
-  {
-    badge: "🧾 KEEP IT TOGETHER",
-    headline: "NEVER LOSE A RECEIPT\nAGAIN.",
-    body: "Keep your tax receipts organised in one place — so when e-Filing comes around, you don't have to dig through WhatsApp, email, drawers or photo galleries.",
-    bg: "from-emerald-950 via-emerald-900 to-gray-950",
-  },
-  {
-    badge: "✨ FIND WHAT YOU MISSED",
-    headline: "SEE WHAT ELSE\nYOU CAN CLAIM.",
-    body: "Track your tax reliefs as you spend — and spot eligible expenses you might otherwise forget to claim.",
-    bg: "from-emerald-950 via-gray-900 to-emerald-950",
-  },
-  {
-    badge: "💰 KNOW YOUR NUMBER",
-    headline: "KNOW WHAT\nYOU'LL GET BACK.",
-    body: "See your estimated tax refund as you build your Tax Diary — or find out if you may need to pay more. No more guessing at tax time.",
-    bg: "from-gray-950 via-emerald-950 to-emerald-950",
-  },
+  { badge: "🗂️ SMART TAX VAULT",   headline: "STRESS-FREE\ne-FILING YA 2026", body: "Store LHDN receipts securely with full Budget 2026 updates (CCTV, Transit & Tourism). Be audit-ready for 7 years.", bg: "from-emerald-950 via-emerald-900 to-gray-900" },
+  { badge: "💡 SMART SUGGESTIONS", headline: "MAXIMIZE YOUR\nREFUNDS", body: "Tax Diary flags unclaimed YA 2026 opportunities and calculates exact ringgit tax savings in real-time.", bg: "from-emerald-950 via-gray-900 to-emerald-950" },
+  { badge: "👑 TRY VAULT FREE",    headline: "7 DAYS FREE\nTHEN RM19/YR", body: "Unlock AI receipt scanning, the Audit-Ready Checklist, Form BE sheet & multi-device cloud sync.", bg: "from-gray-950 via-emerald-950 to-emerald-950" },
 ];
-
-const QUICK_SETUP_SALARY_RANGES = [
-  { label: "< RM3.5k", monthly: 3500 },
-  { label: "RM3.5k–6k", monthly: 5000 },
-  { label: "RM6k–10k", monthly: 8000 },
-  { label: "RM10k–15k", monthly: 12500 },
-  { label: "> RM15k", monthly: 18000 },
-];
-const QUICK_SETUP_CHILDREN = ["0", "1", "2", "3", "4+"];
 
 const DAY = 86400000;
 const YEAR = 365 * DAY;
@@ -174,7 +150,6 @@ export default function App() {
   const [zakatAmt,     setZakatAmt]     = useState("0");
   const [isSelfOKU,    setIsSelfOKU]    = useState(false);
   const [maritalStatus, setMaritalStatus] = useState("single"); // "single" | "married" — set under Profile
-  const [spouseWorking, setSpouseWorking] = useState(true); // quick setup baseline; working spouse means no spouse relief unless further assessment is used
   const hasSpouse = maritalStatus === "married";
   const [spouseInc,    setSpouseInc]    = useState("");
   const [spouseEpfAmt, setSpouseEpfAmt] = useState("");
@@ -191,9 +166,6 @@ export default function App() {
   const [childDisabledHiEdu, setChildDisabledHiEdu] = useState(0);
   const [homeLoanTier, setHomeLoanTier] = useState("under500k"); // "under500k" (RM7,000 cap) | "500to750k" (RM5,000 cap)
   const [clientName,   setClientName]   = useState("");
-  const [quickSetupSalary, setQuickSetupSalary] = useState(5000);
-  const [quickSetupChildren, setQuickSetupChildren] = useState("0");
-  const [showQuickSetup, setShowQuickSetup] = useState(false);
   const [toast,        setToast]        = useState("");
   const [expanded,     setExpanded]     = useState({ Financial: false, Medical: false, Education: false, Lifestyle: false, Property: false });
   const [rcptSearch,   setRcptSearch]   = useState("");
@@ -356,8 +328,8 @@ export default function App() {
       const i = await store.get("mc26-income");
       if (i?.value) {
         const p = JSON.parse(i.value);
-        setIncome(p.income || ""); setOtherIncomeAmt(p.otherIncomeAmt || "0"); setEpfAmt(p.epf || ""); setSocsoAmt(p.socsoAmt || "350"); setZakatAmt(p.zakatAmt || "0"); setIsSelfOKU(p.isSelfOKU || false);
-        setMaritalStatus(p.maritalStatus || (p.hasSpouse ? "married" : "single")); setSpouseWorking(p.spouseWorking ?? !(parseFloat(p.spouseInc) > 0)); setSpouseInc(p.spouseInc || ""); setSpouseDisabled(p.spouseDisabled || false); setSpouseName(p.spouseName || "Spouse"); setPcbAmt(p.pcbAmt || ""); setSpouseEpfAmt(p.spouseEpfAmt || ""); setSpouseSocsoAmt(p.spouseSocsoAmt || "350"); setSpousePcbAmt(p.spousePcbAmt || ""); setChildrenClaimedBy(p.childrenClaimedBy || "mine"); if (p.spouseEpfAmt) setSpouseEpfTouched(true);
+        setIncome(p.income || ""); setOtherIncomeAmt(p.otherIncomeAmt || ""); setEpfAmt(p.epf || ""); setSocsoAmt(p.socsoAmt || ""); setZakatAmt(p.zakatAmt || ""); setIsSelfOKU(p.isSelfOKU || false);
+        setMaritalStatus(p.maritalStatus || (p.hasSpouse ? "married" : "single")); setSpouseInc(p.spouseInc || ""); setSpouseDisabled(p.spouseDisabled || false); setSpouseName(p.spouseName || "Spouse"); setPcbAmt(p.pcbAmt || ""); setSpouseEpfAmt(p.spouseEpfAmt || ""); setSpouseSocsoAmt(p.spouseSocsoAmt || ""); setSpousePcbAmt(p.spousePcbAmt || ""); setChildrenClaimedBy(p.childrenClaimedBy || "mine"); if (p.spouseEpfAmt) setSpouseEpfTouched(true);
         setChildU18(p.childU18 || 0); setChildHiEduDegree(p.childHiEduDegree ?? p.childHiEdu ?? 0); setChildHiEduOther(p.childHiEduOther || 0); setChildDisabled(p.childDisabled || 0); setChildDisabledHiEdu(p.childDisabledHiEdu || 0); setHomeLoanTier(p.homeLoanTier || "under500k");
       }
 
@@ -383,21 +355,7 @@ export default function App() {
     } catch { setView("home"); hydrated.current = true; }
   };
 
-  const doneOnboard = async () => { try { await store.set("mc26-onboard", "1"); } catch {} setView("home"); setShowQuickSetup(true); };
-  const finishQuickSetup = async () => { try { await store.set("mc26-onboard", "1"); } catch {} setShowQuickSetup(false); setView("home"); };
-  const saveQuickSetup = async () => {
-    const annualIncome = String(Math.round(quickSetupSalary * 12));
-    const nextMaritalStatus = maritalStatus;
-    const nextSpouseWorking = nextMaritalStatus === "married" ? spouseWorking : true;
-    const nextChildren = quickSetupChildren === "4+" ? 4 : parseInt(quickSetupChildren, 10) || 0;
-    const trimmedName = clientName.trim();
-    setClientName(trimmedName); setIncome(annualIncome); setMaritalStatus(nextMaritalStatus); setSpouseWorking(nextSpouseWorking); setSpouseInc(""); setChildU18(nextChildren);
-    const payload = { income: annualIncome, otherIncomeAmt, epf: epfAmt, socsoAmt, pcbAmt, zakatAmt, isSelfOKU, maritalStatus: nextMaritalStatus, spouseWorking: nextSpouseWorking, spouseInc: "", spouseEpfAmt, spouseSocsoAmt, spousePcbAmt, spouseDisabled, spouseName, childU18: nextChildren, childHiEduDegree, childHiEduOther, childDisabled, childDisabledHiEdu, homeLoanTier, childrenClaimedBy };
-    const settingsPayload = { clientName: trimmedName }; const uid = auth.currentUser?.uid; const t = Date.now(); localUpdatedAtRef.current = t;
-    try { await store.set(userKey(uid, "income"), JSON.stringify(payload)); await store.set(userKey(uid, "settings"), JSON.stringify(settingsPayload)); await store.set(userKey(uid, "lastlocalupdate"), String(t)); if (!uid) { await store.set("mc26-income", JSON.stringify(payload)); await store.set("mc26-settings", JSON.stringify(settingsPayload)); await store.set("mc26-lastlocalupdate", String(t)); } } catch {}
-    await finishQuickSetup();
-  };
-  const skipQuickSetup = async () => { await finishQuickSetup(); showToast("You can personalise your tax profile anytime from Settings."); };
+  const doneOnboard = async () => { try { await store.set("mc26-onboard", "1"); } catch {} setView("home"); };
 
   const persist = async (list) => {
     const next = Array.isArray(list) ? list : [];
@@ -415,7 +373,7 @@ export default function App() {
     } catch { showToast("Saved this session"); }
   };
   const persistIncome = async () => {
-    const payload = { income, otherIncomeAmt, epf: epfAmt, socsoAmt, pcbAmt, zakatAmt, isSelfOKU, maritalStatus, spouseWorking, spouseInc, spouseEpfAmt, spouseSocsoAmt, spousePcbAmt, spouseDisabled, spouseName, childU18, childHiEduDegree, childHiEduOther, childDisabled, childDisabledHiEdu, homeLoanTier, childrenClaimedBy };
+    const payload = { income, otherIncomeAmt, epf: epfAmt, socsoAmt, pcbAmt, zakatAmt, isSelfOKU, maritalStatus, spouseInc, spouseEpfAmt, spouseSocsoAmt, spousePcbAmt, spouseDisabled, spouseName, childU18, childHiEduDegree, childHiEduOther, childDisabled, childDisabledHiEdu, homeLoanTier, childrenClaimedBy };
     const uid = auth.currentUser?.uid;
     const t = Date.now();
     localUpdatedAtRef.current = t;
@@ -642,7 +600,6 @@ export default function App() {
     zakatAmt: sanitizeScalar(zakatAmt, "0"),
     isSelfOKU: sanitizeBool(isSelfOKU, false),
     maritalStatus: sanitizeScalar(maritalStatus, "single"),
-    spouseWorking: sanitizeBool(spouseWorking, true),
     spouseInc: sanitizeScalar(spouseInc, ""),
     spouseEpfAmt: sanitizeScalar(spouseEpfAmt, ""),
     spouseSocsoAmt: sanitizeScalar(spouseSocsoAmt, "350"),
@@ -700,7 +657,7 @@ export default function App() {
               showToast("⚠️ Sync conflict detected — your cloud data was kept safe. Please contact support.");
               skipNextLocalStampRef.current = true;
               setReceipts(d.receipts || []); setIncome(d.income ?? ""); setOtherIncomeAmt(d.otherIncomeAmt ?? "0"); setEpfAmt(d.epfAmt ?? ""); setSocsoAmt(d.socsoAmt ?? "350"); setPcbAmt(d.pcbAmt ?? ""); setZakatAmt(d.zakatAmt ?? "0"); setIsSelfOKU(d.isSelfOKU || false);
-              setMaritalStatus(d.maritalStatus || "single"); setSpouseWorking(d.spouseWorking ?? !(parseFloat(d.spouseInc) > 0)); setSpouseInc(d.spouseInc ?? ""); setSpouseEpfAmt(d.spouseEpfAmt ?? ""); setSpouseSocsoAmt(d.spouseSocsoAmt ?? "350"); setSpousePcbAmt(d.spousePcbAmt ?? ""); setSpouseDisabled(!!d.spouseDisabled); setSpouseName(d.spouseName || "Spouse"); setChildrenClaimedBy(d.childrenClaimedBy || "mine");
+              setMaritalStatus(d.maritalStatus || "single"); setSpouseInc(d.spouseInc ?? ""); setSpouseEpfAmt(d.spouseEpfAmt ?? ""); setSpouseSocsoAmt(d.spouseSocsoAmt ?? "350"); setSpousePcbAmt(d.spousePcbAmt ?? ""); setSpouseDisabled(!!d.spouseDisabled); setSpouseName(d.spouseName || "Spouse"); setChildrenClaimedBy(d.childrenClaimedBy || "mine");
               setChildU18(d.childU18 ?? 0); setChildHiEduDegree(d.childHiEduDegree ?? 0); setChildHiEduOther(d.childHiEduOther ?? 0); setChildDisabled(d.childDisabled ?? 0); setChildDisabledHiEdu(d.childDisabledHiEdu ?? 0); setHomeLoanTier(d.homeLoanTier || "under500k");
               setClientName(d.clientName || "");
               localUpdatedAtRef.current = cloudUpdatedAt;
@@ -714,7 +671,7 @@ export default function App() {
             // get mistaken for a fresh change on the NEXT comparison.
             skipNextLocalStampRef.current = true;
             setReceipts(d.receipts || []); setIncome(d.income ?? ""); setOtherIncomeAmt(d.otherIncomeAmt ?? "0"); setEpfAmt(d.epfAmt ?? ""); setSocsoAmt(d.socsoAmt ?? "350"); setPcbAmt(d.pcbAmt ?? ""); setZakatAmt(d.zakatAmt ?? "0"); setIsSelfOKU(d.isSelfOKU || false);
-            setMaritalStatus(d.maritalStatus || "single"); setSpouseWorking(d.spouseWorking ?? !(parseFloat(d.spouseInc) > 0)); setSpouseInc(d.spouseInc ?? ""); setSpouseEpfAmt(d.spouseEpfAmt ?? ""); setSpouseSocsoAmt(d.spouseSocsoAmt ?? "350"); setSpousePcbAmt(d.spousePcbAmt ?? ""); setSpouseDisabled(!!d.spouseDisabled); setSpouseName(d.spouseName || "Spouse"); setChildrenClaimedBy(d.childrenClaimedBy || "mine");
+            setMaritalStatus(d.maritalStatus || "single"); setSpouseInc(d.spouseInc ?? ""); setSpouseEpfAmt(d.spouseEpfAmt ?? ""); setSpouseSocsoAmt(d.spouseSocsoAmt ?? "350"); setSpousePcbAmt(d.spousePcbAmt ?? ""); setSpouseDisabled(!!d.spouseDisabled); setSpouseName(d.spouseName || "Spouse"); setChildrenClaimedBy(d.childrenClaimedBy || "mine");
             if (d.spouseEpfAmt) setSpouseEpfTouched(true);
             setChildU18(d.childU18 ?? 0); setChildHiEduDegree(d.childHiEduDegree ?? 0); setChildHiEduOther(d.childHiEduOther ?? 0); setChildDisabled(d.childDisabled ?? 0); setChildDisabledHiEdu(d.childDisabledHiEdu ?? 0); setHomeLoanTier(d.homeLoanTier || "under500k");
             setClientName(d.clientName || "");
@@ -789,7 +746,7 @@ export default function App() {
       }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [receipts, income, otherIncomeAmt, epfAmt, socsoAmt, pcbAmt, zakatAmt, isSelfOKU, maritalStatus, spouseInc, spouseEpfAmt, spouseSocsoAmt, spousePcbAmt, spouseDisabled, spouseName, childU18, childHiEduDegree, childHiEduOther, childDisabled, childDisabledHiEdu, homeLoanTier, childrenClaimedBy, clientName, spouseWorking, signedIn]);
+  }, [receipts, income, otherIncomeAmt, epfAmt, socsoAmt, pcbAmt, zakatAmt, isSelfOKU, maritalStatus, spouseInc, spouseEpfAmt, spouseSocsoAmt, spousePcbAmt, spouseDisabled, spouseName, childU18, childHiEduDegree, childHiEduOther, childDisabled, childDisabledHiEdu, homeLoanTier, childrenClaimedBy, clientName, signedIn]);
 
   // Records "local data changed just now" — deliberately UNCONDITIONAL (runs
   // for every user, signed in or not, Plus or free) so this timestamp is
@@ -807,7 +764,7 @@ export default function App() {
     localUpdatedAtRef.current = t;
     store.set(userKey(auth.currentUser?.uid, "lastlocalupdate"), String(t)).catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [receipts, income, otherIncomeAmt, epfAmt, socsoAmt, pcbAmt, zakatAmt, isSelfOKU, maritalStatus, spouseInc, spouseEpfAmt, spouseSocsoAmt, spousePcbAmt, spouseDisabled, spouseName, childU18, childHiEduDegree, childHiEduOther, childDisabled, childDisabledHiEdu, homeLoanTier, childrenClaimedBy, clientName, spouseWorking]);
+  }, [receipts, income, otherIncomeAmt, epfAmt, socsoAmt, pcbAmt, zakatAmt, isSelfOKU, maritalStatus, spouseInc, spouseEpfAmt, spouseSocsoAmt, spousePcbAmt, spouseDisabled, spouseName, childU18, childHiEduDegree, childHiEduOther, childDisabled, childDisabledHiEdu, homeLoanTier, childrenClaimedBy, clientName]);
 
   useEffect(() => {
     if (!hasSpouse || spouseEpfTouched) return;
@@ -821,7 +778,7 @@ export default function App() {
     skipNextLocalStampRef.current = true;
     localUpdatedAtRef.current = 0;
     setReceipts([]); setIncome(""); setOtherIncomeAmt("0"); setEpfAmt(""); setPcbAmt(""); setSocsoAmt(""); setZakatAmt("0"); setIsSelfOKU(false);
-    setMaritalStatus("single"); setSpouseWorking(true); setSpouseInc(""); setSpouseEpfAmt(""); setSpouseEpfTouched(false); setSpouseSocsoAmt(""); setSpousePcbAmt(""); setSpouseDisabled(false); setSpouseName("Spouse"); setChildrenClaimedBy("mine");
+    setMaritalStatus("single"); setSpouseInc(""); setSpouseEpfAmt(""); setSpouseEpfTouched(false); setSpouseSocsoAmt(""); setSpousePcbAmt(""); setSpouseDisabled(false); setSpouseName("Spouse"); setChildrenClaimedBy("mine");
     setChildU18(0); setChildHiEduDegree(0); setChildHiEduOther(0); setChildDisabled(0); setChildDisabledHiEdu(0); setHomeLoanTier("under500k");
     setClientName("");
     try {
@@ -867,7 +824,7 @@ export default function App() {
           const p = JSON.parse(i.value) || {};
           setIncome(p.income || ""); setOtherIncomeAmt(p.otherIncomeAmt || "0"); setEpfAmt(p.epf || "");
           setSocsoAmt(p.socsoAmt || "350"); setZakatAmt(p.zakatAmt || "0"); setIsSelfOKU(!!p.isSelfOKU);
-          setMaritalStatus(p.maritalStatus || (p.hasSpouse ? "married" : "single")); setSpouseWorking(p.spouseWorking ?? !(parseFloat(p.spouseInc) > 0)); setSpouseInc(p.spouseInc || "");
+          setMaritalStatus(p.maritalStatus || (p.hasSpouse ? "married" : "single")); setSpouseInc(p.spouseInc || "");
           setSpouseDisabled(!!p.spouseDisabled); setSpouseName(p.spouseName || "Spouse"); setPcbAmt(p.pcbAmt || "");
           setSpouseEpfAmt(p.spouseEpfAmt || ""); setSpouseSocsoAmt(p.spouseSocsoAmt || "350"); setSpousePcbAmt(p.spousePcbAmt || "");
           setChildrenClaimedBy(p.childrenClaimedBy || "mine"); if (p.spouseEpfAmt) setSpouseEpfTouched(true);
@@ -1036,7 +993,7 @@ export default function App() {
   // Spouse relief (RM4,000) only applies unconditionally when spouse has no income — otherwise it depends on
   // electing Joint Assessment, which this single-person dashboard doesn't ask about. See the Spouse tab for the
   // full Joint vs Separate comparison, which handles this correctly either way.
-  const spouseHasNoIncome = hasSpouse && !spouseWorking;
+  const spouseHasNoIncome = hasSpouse && !(parseFloat(spouseInc) > 0);
   const myChildRelief = (hasSpouse && childrenClaimedBy === "spouse") ? 0 : childR;
   // Total taxable income = employment income + any side-hustle/rental income the user has
   // explicitly included via the Scenario Planner. Using this everywhere (not raw `income`)
@@ -1390,7 +1347,6 @@ export default function App() {
 
   if (view === "onboard") {
     const sl = SLIDES[slideIdx];
-    const isLastSlide = slideIdx === SLIDES.length - 1;
     return (
       <div className={`fixed inset-0 bg-gradient-to-br ${sl.bg} flex flex-col justify-between overflow-hidden select-none`} onTouchStart={onTS} onTouchEnd={onTE}>
         <div className="flex justify-between items-center p-6 z-10">
@@ -1400,25 +1356,19 @@ export default function App() {
           </div>
           <button onClick={doneOnboard} className="text-gray-300 text-xs font-bold px-3 py-1.5 rounded-full bg-white/10 border border-white/20">Skip</button>
         </div>
-
         <div className="flex-1 flex items-center justify-center p-8">
-          <div className="text-center space-y-5 max-w-sm">
+          <div className="text-center space-y-4">
             <div className="text-5xl">{sl.badge.slice(0, 2)}</div>
             <p className="text-emerald-300 text-xs font-bold tracking-widest uppercase">{sl.badge.slice(3)}</p>
-            <h1 className="text-4xl font-black text-white leading-tight whitespace-pre-line tracking-tight">{sl.headline}</h1>
+            <h1 className="text-4xl font-black text-white leading-tight whitespace-pre-line">{sl.headline}</h1>
             <p className="text-gray-300 text-sm leading-relaxed max-w-xs mx-auto">{sl.body}</p>
           </div>
         </div>
-
         <div className="p-8 space-y-6">
           <div className="flex items-center justify-between">
-            <div className="flex gap-2">
-              {SLIDES.map((_, i) => (
-                <button key={i} onClick={() => setSlideIdx(i)} aria-label={`Go to slide ${i + 1}`} className={`rounded-full transition-all ${slideIdx === i ? "w-8 h-2.5 bg-emerald-400" : "w-2.5 h-2.5 bg-white/30"}`} />
-              ))}
-            </div>
-            <button onClick={() => isLastSlide ? setView("setup") : setSlideIdx(p => p + 1)} className={`${isLastSlide ? "px-5 py-3.5 rounded-2xl bg-emerald-400 text-gray-950 gap-2 text-xs" : "w-14 h-14 rounded-full bg-white text-gray-950"} font-black flex items-center justify-center shadow-xl hover:bg-emerald-300 transition active:scale-95`}>
-              {isLastSlide ? <>Start your Tax Diary <ArrowRight className="w-4 h-4" strokeWidth={2.5} /></> : <ArrowRight className="w-6 h-6" strokeWidth={2.5} />}
+            <div className="flex gap-2">{SLIDES.map((_, i) => (<button key={i} onClick={() => setSlideIdx(i)} className={`rounded-full transition-all ${slideIdx === i ? "w-8 h-2.5 bg-emerald-400" : "w-2.5 h-2.5 bg-white/30"}`} />))}</div>
+            <button onClick={() => slideIdx < SLIDES.length - 1 ? setSlideIdx(p => p + 1) : doneOnboard()} className="w-14 h-14 rounded-full bg-white text-gray-950 font-bold flex items-center justify-center shadow-xl hover:bg-emerald-400 transition active:scale-95">
+              <ArrowRight className="w-6 h-6 stroke-[2.5]" />
             </button>
           </div>
         </div>
@@ -1426,27 +1376,8 @@ export default function App() {
     );
   }
 
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-100 via-slate-50 to-gray-100 font-sans flex flex-col">
-      {showQuickSetup && (
-        <div className="fixed inset-0 z-[120] bg-gray-950/45 backdrop-blur-sm flex items-end sm:items-center justify-center p-3 sm:p-5">
-          <div className="bg-white w-full max-w-md rounded-[28px] shadow-2xl max-h-[92vh] overflow-y-auto">
-            <div className="p-5 sm:p-6">
-              <div className="flex items-center justify-between mb-4"><div className="flex items-center gap-2.5"><img src="/icons/icon-512.png" alt="Tax Diary" className="w-9 h-9 rounded-xl object-contain" /><div><p className="text-sm font-black text-gray-900">Quick Setup</p><p className="text-[10px] text-gray-400 font-medium">Optional — you can change this anytime</p></div></div><button onClick={skipQuickSetup} className="text-xs font-bold text-gray-500 px-3 py-1.5 rounded-full border border-gray-200 bg-gray-50">Skip</button></div>
-              <div className="mb-5"><p className="text-emerald-700 text-[10px] font-black uppercase tracking-widest mb-1">Personalise your dashboard</p><h2 className="text-2xl font-black text-gray-900 tracking-tight">A little setup. A much better estimate.</h2><p className="text-sm text-gray-500 mt-2 leading-relaxed">Give Tax Diary a few basics. This helps your dashboard show a more useful starting estimate.</p></div>
-              <div className="space-y-3.5">
-                <div className="bg-gray-50 rounded-2xl border border-gray-200 p-4"><label className="text-[10px] font-black text-gray-500 uppercase tracking-wider flex items-center gap-1.5 mb-2"><UserCheck className="w-3.5 h-3.5 text-emerald-600" /> Your name</label><input value={clientName} onChange={e => setClientName(e.target.value)} placeholder="e.g. Ayub" className="w-full px-3.5 py-3 rounded-xl bg-white border border-gray-200 text-sm font-semibold text-gray-900 outline-none focus:ring-2 focus:ring-emerald-400" /></div>
-                <div className="bg-gray-50 rounded-2xl border border-gray-200 p-4"><label className="text-[10px] font-black text-gray-500 uppercase tracking-wider flex items-center gap-1.5 mb-2"><DollarSign className="w-3.5 h-3.5 text-emerald-600" /> Approx. monthly income</label><div className="grid grid-cols-2 gap-2">{QUICK_SETUP_SALARY_RANGES.map(item => <button key={item.monthly} type="button" onClick={() => setQuickSetupSalary(item.monthly)} className={`py-2.5 px-2 rounded-xl border text-xs font-bold transition ${quickSetupSalary === item.monthly ? "bg-emerald-600 text-white border-emerald-600 shadow-sm" : "bg-white text-gray-600 border-gray-200 hover:border-emerald-300"}`}>{item.label}</button>)}</div><p className="text-[10px] text-gray-400 mt-2">Used as a rough annual estimate. You can enter your exact annual income later.</p></div>
-                <div className="bg-gray-50 rounded-2xl border border-gray-200 p-4"><label className="text-[10px] font-black text-gray-500 uppercase tracking-wider flex items-center gap-1.5 mb-2"><Heart className="w-3.5 h-3.5 text-emerald-600" /> Marital status</label><div className="grid grid-cols-2 gap-2">{[["single", "Single"], ["married", "Married"]].map(([value, label]) => <button key={value} type="button" onClick={() => setMaritalStatus(value)} className={`py-2.5 rounded-xl border text-xs font-bold transition ${maritalStatus === value ? "bg-emerald-600 text-white border-emerald-600" : "bg-white text-gray-600 border-gray-200"}`}>{label}</button>)}</div>{maritalStatus === "married" && <div className="mt-3 pt-3 border-t border-gray-200"><p className="text-[10px] font-bold text-gray-500 mb-2">Spouse employment</p><div className="grid grid-cols-2 gap-2"><button type="button" onClick={() => setSpouseWorking(true)} className={`py-2.5 rounded-xl border text-xs font-bold ${spouseWorking ? "bg-emerald-50 border-emerald-300 text-emerald-700" : "bg-white text-gray-500 border-gray-200"}`}>Working</button><button type="button" onClick={() => setSpouseWorking(false)} className={`py-2.5 rounded-xl border text-xs font-bold ${!spouseWorking ? "bg-emerald-600 border-emerald-600 text-white" : "bg-white text-gray-500 border-gray-200"}`}>Not working</button></div></div>}</div>
-                <div className="bg-gray-50 rounded-2xl border border-gray-200 p-4"><label className="text-[10px] font-black text-gray-500 uppercase tracking-wider flex items-center gap-1.5 mb-2"><Baby className="w-3.5 h-3.5 text-emerald-600" /> Children under 18</label><div className="flex gap-1.5">{QUICK_SETUP_CHILDREN.map(num => <button key={num} type="button" onClick={() => setQuickSetupChildren(num)} className={`flex-1 py-2.5 rounded-xl border text-xs font-bold transition ${quickSetupChildren === num ? "bg-emerald-600 text-white border-emerald-600" : "bg-white text-gray-600 border-gray-200"}`}>{num}</button>)}</div></div>
-              </div>
-              <div className="mt-5"><button onClick={saveQuickSetup} className="w-full py-3.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-black shadow-lg shadow-emerald-900/15 flex items-center justify-center gap-2 transition active:scale-[0.99]">Go to Tax Dashboard <ArrowRight className="w-4 h-4" strokeWidth={2.5} /></button><p className="text-center text-[10px] text-gray-400 mt-2">You can update all of this later in Settings.</p></div>
-            </div>
-          </div>
-        </div>
-      )}
-
       {toast && (
         <div className="fixed bottom-5 right-5 z-[100] bg-gray-900 text-white px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-2 text-xs font-semibold animate-bounce">
           <CheckCircle2 className="w-4 h-4 text-emerald-400" />{toast}
@@ -1457,20 +1388,20 @@ export default function App() {
           being pulled from Firestore on load VISIBLE, instead of a silent
           gap that can look identical to "my data is gone" on a fast reload. */}
       {cloudSyncStatus === "loading" && (
-        <div className="bg-gradient-to-r from-slate-800 to-gray-900 text-white text-center text-xs font-bold py-2 px-4 flex items-center justify-center gap-2">
+        <div className="bg-gradient-to-r from-slate-800 to-slate-900 text-white text-center text-xs font-bold py-2 px-4 flex items-center justify-center gap-2">
           <RefreshCw className="w-3.5 h-3.5 animate-spin" /> Syncing your data…
         </div>
       )}
 
       {/* Trial / Renewal Countdown Banner */}
       {isTrialing && (
-        <div className="bg-gradient-to-r from-emerald-700 to-teal-800 text-white text-center text-xs font-bold py-2 px-4 flex items-center justify-center gap-2">
+        <div className="bg-gradient-to-r from-amber-500 to-amber-600 text-white text-center text-xs font-bold py-2 px-4 flex items-center justify-center gap-2">
           <Clock className="w-3.5 h-3.5" /> Plus trial: {trialDaysLeft} day{trialDaysLeft !== 1 ? "s" : ""} left
           <button onClick={() => openPaywall("Keep Plus Features", "Subscribe now so you never lose access when your trial ends.")} className="underline ml-1">Subscribe now — RM{PRICE.toFixed(2)}/yr</button>
         </div>
       )}
       {showRenewalBanner && (
-        <div className="bg-gradient-to-r from-slate-800 to-gray-900 text-white text-center text-xs font-bold py-2 px-4 flex items-center justify-center gap-2">
+        <div className="bg-gradient-to-r from-slate-800 to-slate-900 text-white text-center text-xs font-bold py-2 px-4 flex items-center justify-center gap-2">
           <RefreshCw className="w-3.5 h-3.5" /> Plus renews in {daysToRenewal} day{daysToRenewal !== 1 ? "s" : ""}
           <button onClick={() => openPaywall("Renew Plus", "Renew your subscription to keep your Plus features active.")} className="underline ml-1">Renew now — RM{PRICE.toFixed(2)}/yr</button>
         </div>
@@ -1479,14 +1410,14 @@ export default function App() {
       {/* Install App Banner — Android shows a real install button (beforeinstallprompt);
           iOS shows manual "tap Share" instructions since iOS has no install API. */}
       {showInstallBanner && !isStandalone && (
-        <div className="bg-gradient-to-r from-gray-950 to-gray-800 text-white text-xs font-bold py-2.5 px-4 flex items-center justify-center gap-3 flex-wrap">
-          <Smartphone className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+        <div className="bg-gray-900 text-white text-xs font-bold py-2.5 px-4 flex items-center justify-center gap-3 flex-wrap">
+          <Smartphone className="w-3.5 h-3.5 text-gray-300 shrink-0" />
           {isIOS ? (
             <span>Install Tax Diary: tap <strong>Share</strong> below, then <strong>"Add to Home Screen"</strong></span>
           ) : (
             <>
               <span>Install Tax Diary for quick, offline access</span>
-              <button onClick={handleInstallClick} className="px-3 py-1 bg-gradient-to-r from-amber-500 to-amber-700 hover:from-amber-400 hover:to-amber-600 rounded-lg">Install</button>
+              <button onClick={handleInstallClick} className="px-3 py-1 bg-white text-gray-900 hover:bg-gray-100 font-bold rounded-lg transition">Install</button>
             </>
           )}
           <button onClick={dismissInstallBanner} className="text-gray-400 hover:text-white ml-1"><X className="w-3.5 h-3.5" /></button>
@@ -1501,7 +1432,7 @@ export default function App() {
             <div>
               <div className="flex items-center gap-2">
                 <img src="/brand/wordmark.png" alt="Tax Diary" className="h-5 w-auto" />
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200">YA {taxYear}</span>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">YA {taxYear}</span>
                 {isPro && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-300 flex items-center gap-1"><Crown className="w-3 h-3" /> Plus</span>}
               </div>
               <p className="text-[10px] text-gray-400 hidden sm:block">LHDN e-Filing Relief Organizer · Budget 2026 Ready</p>
@@ -1531,36 +1462,51 @@ export default function App() {
 
       <main className="flex-1 max-w-6xl w-full mx-auto p-4 space-y-4 pb-24">
 
-        {/* Hero Banner */}
-        <div className="bg-gradient-to-br from-gray-950 via-gray-900 to-amber-950 rounded-3xl p-5 sm:p-6 shadow-xl border-2 border-amber-500/30 relative overflow-hidden space-y-4">
-          <div className="absolute -top-10 -right-10 w-32 h-32 bg-amber-400/20 rounded-full blur-2xl pointer-events-none" />
-          <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-amber-600/15 rounded-full blur-2xl pointer-events-none" />
+{/* Hero Banner — Dark Emerald, Deep Gradient (locked palette) */}
+<div className="bg-gradient-to-br from-[#03140E] via-[#065F46] to-[#10B981] backdrop-blur-md rounded-3xl p-5 sm:p-6 shadow-xl border border-[#10B981]/30 relative overflow-hidden space-y-4">
+  <div className="absolute -top-10 -right-10 w-32 h-32 bg-[#10B981]/25 rounded-full blur-2xl pointer-events-none" />
+  <div className="absolute -bottom-14 -left-10 w-40 h-40 bg-[#D4A72C]/15 rounded-full blur-2xl pointer-events-none" />
 
-          <div className="border-b border-amber-500/20 pb-4 relative">
-            <h1 className="text-xl sm:text-2xl font-black tracking-tight text-white">Salam{clientName ? `, ${clientName}` : ""} 👋</h1>
-            <p className="text-xs text-amber-300 font-semibold">Track YA {taxYear} reliefs · Log receipts · Maximize your refund before 31 Dec {taxYear}</p>
-          </div>
-          <div className="grid grid-cols-2 gap-3 relative">
-            <div className={`bg-gradient-to-br ${myBalance <= 0 ? "from-emerald-50 to-emerald-100 border-emerald-200" : "from-amber-50 to-orange-50 border-amber-200"} border p-3 rounded-2xl`}>
-              <p className={`text-[10px] font-black uppercase tracking-wider ${myBalance <= 0 ? "text-emerald-600" : "text-amber-600"}`}>{myBalance <= 0 ? "Est. Refund" : "Est. Balance Owed"}</p>
-              <p className={`text-lg sm:text-2xl font-black mt-0.5 ${myBalance <= 0 ? "text-emerald-600" : "text-amber-600"}`}>{fmt(Math.abs(myBalance), 0)}</p>
-              <p className={`text-[10px] font-medium opacity-70 ${myBalance <= 0 ? "text-emerald-600" : "text-amber-600"}`}>vs PCB already paid</p>
-            </div>
-            <div className="bg-gradient-to-br from-slate-50 to-gray-100 border border-gray-200 p-3 rounded-2xl">
-              <p className="text-[10px] font-black uppercase tracking-wider text-gray-700">Total Reliefs Claimed</p>
-              <p className="text-lg sm:text-2xl font-black mt-0.5 text-amber-700">RM {totalReliefs.toLocaleString()}</p>
-              <p className="text-[10px] font-medium opacity-70 text-gray-500">Chargeable income: RM {chargeable.toLocaleString()}</p>
-            </div>
-          </div>
-        </div>
+  {/* Header Section */}
+  <div className="border-b border-white/15 pb-4 relative">
+    <h1 className="text-xl sm:text-2xl font-black tracking-tight text-white">Salam{clientName ? `, ${clientName}` : ""} 👋</h1>
+    <p className="text-xs text-emerald-100/90 font-semibold">Track YA {taxYear} reliefs · Log receipts · Maximize your refund before 31 Dec {taxYear}</p>
+  </div>
+
+  {/* Inner Dashboard Cards Grid — light mint cards on the dark gradient so the
+      numbers stay easy to read, uniform treatment regardless of refund/owed */}
+  <div className="grid grid-cols-2 gap-3 relative">
+    {/* Left Card: Est. Refund / Balance Owed */}
+    <div className="bg-[#ECFDF5] border border-[#10B981]/20 p-3 rounded-2xl">
+      <p className="text-[10px] font-black uppercase tracking-wider text-[#065F46]/80">
+        {myBalance <= 0 ? "Est. Refund" : "Est. Balance Owed"}
+      </p>
+      <p className="text-lg sm:text-2xl font-black mt-0.5 text-[#064E3B]">
+        {fmt(Math.abs(myBalance), 0)}
+      </p>
+      <p className="text-[10px] font-semibold opacity-80 text-[#065F46]">
+        vs PCB already paid
+      </p>
+    </div>
+
+    {/* Right Card: Total Reliefs Claimed */}
+    <div className="bg-[#ECFDF5] border border-[#10B981]/20 p-3 rounded-2xl">
+      <p className="text-[10px] font-black uppercase tracking-wider text-[#065F46]/80">Total Reliefs Claimed</p>
+      <p className="text-lg sm:text-2xl font-black mt-0.5 text-[#064E3B]">RM {totalReliefs.toLocaleString()}</p>
+      <p className="text-[10px] font-semibold opacity-80 text-[#065F46]">Chargeable income: RM {chargeable.toLocaleString()}</p>
+    </div>
+  </div>
+</div>
+        
+
 
         {taxYear === 2026 && (
-          <div className={`bg-white p-4 rounded-3xl border shadow-sm space-y-2 ${daysLeft <= 30 ? "border-red-200" : daysLeft <= 90 ? "border-orange-200" : "border-gray-200"}`}>
+          <div className={`bg-white p-4 rounded-3xl border shadow-sm space-y-2 ${daysLeft <= 30 ? "border-red-200" : daysLeft <= 90 ? "border-amber-200" : "border-gray-200"}`}>
             <div className="flex justify-between text-xs font-bold">
-              <span className="flex items-center gap-1.5"><Calendar className="w-4 h-4 text-emerald-600" /> YA 2026 Planning Window</span>
-              <span className={daysLeft <= 30 ? "text-red-600" : daysLeft <= 90 ? "text-orange-500" : "text-gray-600"}>{daysLeft > 0 ? `${daysLeft} days to 31 Dec 2026` : "Year closed"}</span>
+              <span className="flex items-center gap-1.5"><Calendar className="w-4 h-4 text-emerald-700" /> YA 2026 Planning Window</span>
+              <span className={daysLeft <= 30 ? "text-red-600" : daysLeft <= 90 ? "text-amber-600" : "text-gray-600"}>{daysLeft > 0 ? `${daysLeft} days to 31 Dec 2026` : "Year closed"}</span>
             </div>
-            <div className="bg-gray-100 h-2.5 rounded-full overflow-hidden"><div className={`h-full rounded-full ${daysLeft <= 30 ? "bg-red-500" : daysLeft <= 90 ? "bg-orange-400" : "bg-emerald-600"}`} style={{ width: `${yearPct}%` }} /></div>
+            <div className="bg-gray-100 h-2.5 rounded-full overflow-hidden"><div className={`h-full rounded-full ${daysLeft <= 30 ? "bg-red-500" : daysLeft <= 90 ? "bg-amber-400" : "bg-emerald-600"}`} style={{ width: `${yearPct}%` }} /></div>
             <div className="flex justify-between text-xs text-gray-500">
               <span>{opps.length} relief opportunities unfulfilled</span>
               <span className="font-bold text-emerald-700">RM {opps.reduce((s, c) => s + c.rem, 0).toLocaleString()} available</span>
@@ -1569,9 +1515,12 @@ export default function App() {
         )}
 
         {/* Quick Actions */}
-        <button onClick={() => { setForm(blank(taxYear)); setEditId(null); setShowReceipt(true); }} className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-700 hover:from-amber-400 hover:to-amber-600 text-white font-bold text-sm shadow-lg flex items-center justify-center gap-2 active:scale-95 transition">
-          <Plus className="w-4 h-4" /> Add Receipt
-        </button>
+<button 
+  onClick={() => { setForm(blank(taxYear)); setEditId(null); setShowReceipt(true); }} 
+  className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-emerald-800 to-emerald-500 hover:from-emerald-900 hover:to-emerald-600 text-white font-black text-sm shadow-md hover:shadow-lg flex items-center justify-center gap-2 active:scale-98 transition duration-200">
+  <Plus className="w-4 h-4 stroke-[3]" /> Add Receipt
+</button>
+  
 
         {/* Main Content Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -1620,14 +1569,14 @@ export default function App() {
                                 </div>
                               </div>
                               <div className="bg-gray-100 h-2 rounded-full overflow-hidden">
-                                <div className={`h-full rounded-full transition-all ${isMaxed ? "bg-emerald-500" : spent > 0 ? "bg-teal-600" : "bg-transparent"}`} style={{ width: `${pct}%` }} />
+                                <div className={`h-full rounded-full transition-all ${isMaxed ? "bg-emerald-500" : spent > 0 ? "bg-emerald-600" : "bg-transparent"}`} style={{ width: `${pct}%` }} />
                               </div>
                               {!isMaxed && rem > 0 && (
                                 <div className="flex items-center justify-between text-xs bg-emerald-50/60 p-2 rounded-xl border border-emerald-100 gap-2">
-                                  <span className="text-[11px] text-emerald-900 font-medium flex items-center gap-1 flex-wrap">
-                                    <Sparkles className="w-3 h-3 text-emerald-600" /> <strong>RM {rem.toLocaleString()}</strong> unclaimed
+                                  <span className="text-[11px] text-emerald-800 font-medium flex items-center gap-1 flex-wrap">
+                                    <Sparkles className="w-3 h-3 text-emerald-700" /> <strong>RM {rem.toLocaleString()}</strong> unclaimed
                                     {isPro ? (
-                                      <span className="text-amber-700 font-bold">· saves ~RM {estSave.toLocaleString()} tax</span>
+                                      <span className="text-emerald-700 font-bold">· saves ~RM {estSave.toLocaleString()} tax</span>
                                     ) : (
                                       <button onClick={() => openPaywall("Personalized Tax-Savings Estimate", "See exactly how much tax you'd save by maxing out each relief category.")} className="text-gray-400 font-bold flex items-center gap-0.5"><Lock className="w-2.5 h-2.5" /> see RM saved</button>
                                     )}
@@ -1655,11 +1604,11 @@ export default function App() {
             {/* Top Opportunities */}
             <div className="bg-white rounded-3xl p-5 border border-gray-200 shadow-sm space-y-4">
               <div className="flex items-center justify-between border-b border-gray-100 pb-3">
-                <h4 className="font-extrabold text-sm flex items-center gap-2"><Sparkles className="w-4 h-4 text-emerald-600" /> Top Relief Opportunities</h4>
+                <h4 className="font-extrabold text-sm flex items-center gap-2"><Sparkles className="w-4 h-4 text-emerald-700" /> Top Relief Opportunities</h4>
                 <span className="text-[10px] bg-emerald-50 text-emerald-700 font-bold px-2 py-0.5 rounded-full border border-emerald-200">YA {taxYear}</span>
               </div>
               {opps.length === 0 ? (
-                <p className="text-xs text-emerald-600 font-semibold text-center py-2">🎉 All categories have entries!</p>
+                <p className="text-xs text-emerald-700 font-semibold text-center py-2">🎉 All categories have entries!</p>
               ) : (
                 <div className="space-y-2.5">
                   {opps.slice(0, 4).map(c => (
@@ -1702,7 +1651,7 @@ export default function App() {
         const goTools = () => { setShowVault(false); setShowSettings(false); setShowTools(true); };
         const goProfile = () => { setShowVault(false); setShowTools(false); openSettings("user"); };
         const tabBtn = (active, onClick, Icon, label) => (
-          <button onClick={onClick} className={`flex flex-col items-center gap-0.5 px-4 py-1.5 rounded-2xl transition ${active ? "text-amber-600" : "text-gray-400"}`}>
+          <button onClick={onClick} className={`flex flex-col items-center gap-0.5 px-4 py-1.5 rounded-2xl transition ${active ? "text-emerald-700" : "text-gray-400"}`}>
             <Icon className="w-5 h-5" strokeWidth={active ? 2.5 : 2} />
             <span className={`text-[10px] ${active ? "font-extrabold" : "font-semibold"}`}>{label}</span>
           </button>
@@ -1723,7 +1672,7 @@ export default function App() {
           <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-4 mx-auto my-8" onClick={(e) => e.stopPropagation()}>
             <div className="flex justify-between items-center border-b border-gray-100 pb-3">
               <div>
-                <h3 className="font-extrabold text-base flex items-center gap-2"><Sliders className="w-5 h-5 text-emerald-600" /> Tools</h3>
+                <h3 className="font-extrabold text-base flex items-center gap-2"><Sliders className="w-5 h-5 text-emerald-700" /> Tools</h3>
                 <p className="text-xs text-gray-400">Checklist · Planner · Form BE · Spouse Strategy</p>
               </div>
               <button onClick={() => setShowTools(false)}><X className="w-5 h-5 text-gray-400" /></button>
@@ -1733,7 +1682,7 @@ export default function App() {
               <div className="bg-gradient-to-br from-amber-500 to-amber-600 rounded-3xl p-5 text-white shadow-md space-y-3">
                 <div className="flex items-center gap-2 font-bold text-sm"><Crown className="w-4 h-4" /> Try Plus Free for 7 Days</div>
                 <p className="text-xs text-amber-50 leading-relaxed">AI receipt scanning, Audit-Ready Checklist, Form BE copy sheet, tax-savings estimates & multi-device sync.</p>
-                <button onClick={() => { setShowTools(false); openPaywall("Upgrade to Plus", "Unlock AI scanning, 7-year history, Form BE sheet and more.", () => setShowTools(true)); }} className="w-full py-2 bg-white text-amber-700 rounded-xl text-xs font-extrabold">See Plus Features</button>
+                <button onClick={() => { setShowTools(false); openPaywall("Upgrade to Plus", "Unlock AI scanning, 7-year history, Form BE sheet and more.", () => setShowTools(true)); }} className="w-full py-2 bg-white text-orange-600 rounded-xl text-xs font-extrabold">See Plus Features</button>
               </div>
             )}
 
@@ -1749,13 +1698,13 @@ export default function App() {
             {/* Tool launcher grid */}
             <div className="grid grid-cols-2 gap-2">
               <button onClick={() => { setShowTools(false); isPro ? setShowAuditCheck(true) : openPaywall("Audit-Ready Checklist", "A quick self-check so your claims are well-documented before you file.", () => setShowTools(true)); }} className="p-3 rounded-2xl bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-800 font-bold text-xs flex flex-col items-center gap-1.5 text-center">
-                {isPro ? <ShieldCheck className="w-5 h-5 text-emerald-600" /> : <Lock className="w-4 h-4 text-amber-500" />} Checklist
+                {isPro ? <ShieldCheck className="w-5 h-5 text-emerald-700" /> : <Lock className="w-4 h-4 text-amber-500" />} Checklist
               </button>
               <button onClick={() => { setShowTools(false); setShowScenario(true); }} className="p-3 rounded-2xl bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-800 font-bold text-xs flex flex-col items-center gap-1.5 text-center">
                 <Briefcase className="w-5 h-5 text-violet-600" /> Other Income
               </button>
               <button onClick={() => { setShowTools(false); isPro ? setShowFormBE(true) : openPaywall("LHDN Form BE Copy Sheet", "Get your relief totals mapped straight to Form BE lines D1–D18, ready to paste into MyTax.", () => setShowTools(true)); }} className="p-3 rounded-2xl bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-800 font-bold text-xs flex flex-col items-center gap-1.5 text-center">
-                {isPro ? <FileText className="w-5 h-5 text-emerald-600" /> : <Lock className="w-4 h-4 text-amber-500" />} Form BE Sheet
+                {isPro ? <FileText className="w-5 h-5 text-emerald-700" /> : <Lock className="w-4 h-4 text-amber-500" />} Form BE Sheet
               </button>
               <button onClick={() => { setShowTools(false); setShowSpouseDetail(true); }} className="p-3 rounded-2xl bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-800 font-bold text-xs flex flex-col items-center gap-1.5 text-center">
                 <Heart className="w-5 h-5 text-rose-500" /> Spouse Strategy
@@ -1764,10 +1713,10 @@ export default function App() {
 
             {/* Compliance & Vault Years */}
             <div className="bg-gradient-to-br from-gray-900 to-emerald-950 rounded-3xl p-5 text-white shadow-md space-y-3">
-              <div className="flex items-center gap-2 text-amber-300 font-bold text-xs border-b border-white/10 pb-2"><Archive className="w-4 h-4" /> LHDN 7-Year Vault Compliance</div>
+              <div className="flex items-center gap-2 text-emerald-300 font-bold text-xs border-b border-white/10 pb-2"><Archive className="w-4 h-4" /> LHDN 7-Year Vault Compliance</div>
               <p className="text-xs text-gray-300 leading-relaxed">Section 82A, ITA 1967: retain all receipts for <strong>7 years</strong> after the relevant YA.</p>
               <button onClick={() => { setShowTools(false); openVault(() => setShowTools(true)); }} className="w-full py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 border border-white/20 transition"><Archive className="w-3.5 h-3.5" /> Manage Vault Years</button>
-              <a href="https://mytax.hasil.gov.my" target="_blank" rel="noreferrer" className="w-full py-2 bg-gradient-to-r from-gray-900 to-gray-700 hover:from-gray-800 hover:to-gray-600 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition"><ExternalLink className="w-3.5 h-3.5" /> MyTax Official Portal</a>
+              <a href="https://mytax.hasil.gov.my" target="_blank" rel="noreferrer" className="w-full py-2 bg-gradient-to-r from-emerald-700 to-emerald-800 hover:from-emerald-900 hover:to-emerald-950 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition"><ExternalLink className="w-3.5 h-3.5" /> MyTax Official Portal</a>
             </div>
 
 
@@ -1780,22 +1729,22 @@ export default function App() {
         <div className="fixed inset-0 z-[70] bg-gray-900/60 backdrop-blur-sm overflow-y-auto p-4" onClick={() => { setShowAuditCheck(false); setShowTools(true); }}>
           <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 mx-auto my-8" onClick={(e) => e.stopPropagation()}>
             <div className="flex justify-between items-center border-b border-gray-100 pb-3">
-              <h3 className="font-bold text-base flex items-center gap-2"><ShieldCheck className="w-5 h-5 text-emerald-600" /> Audit-Ready Checklist</h3>
+              <h3 className="font-bold text-base flex items-center gap-2"><ShieldCheck className="w-5 h-5 text-emerald-700" /> Audit-Ready Checklist</h3>
               <button onClick={() => { setShowAuditCheck(false); setShowTools(true); }}><X className="w-5 h-5 text-gray-400" /></button>
             </div>
             <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 text-center space-y-1">
               <p className="text-xs font-bold text-emerald-800">Documentation Score</p>
               <p className="text-3xl font-black text-emerald-700">{auditHealthScore.score}%</p>
-              <p className="text-[11px] text-emerald-600">{auditHealthScore.score >= 90 ? "Nicely done — your claims are well documented." : "A few things worth tidying up before you file."}</p>
+              <p className="text-[11px] text-emerald-700">{auditHealthScore.score >= 90 ? "Nicely done — your claims are well documented." : "A few things worth tidying up before you file."}</p>
             </div>
             <div className="space-y-2">
               <p className="text-xs font-bold text-gray-700">Worth double-checking:</p>
               {auditHealthScore.flags.length === 0 ? (
-                <p className="text-xs text-emerald-600 font-semibold p-3 bg-gray-50 rounded-xl">✓ All claims have attached receipt images and reasonable claim amounts.</p>
+                <p className="text-xs text-emerald-700 font-semibold p-3 bg-gray-50 rounded-xl">✓ All claims have attached receipt images and reasonable claim amounts.</p>
               ) : (
                 auditHealthScore.flags.map((f, i) => (
-                  <div key={i} className={`p-3 rounded-xl border text-xs flex items-start gap-2 ${f.level === "warn" ? "bg-amber-50 border-amber-200 text-amber-900" : "bg-gray-50 border-gray-200 text-gray-700"}`}>
-                    <AlertTriangle className="w-4 h-4 shrink-0 text-amber-600 mt-0.5" />
+                  <div key={i} className={`p-3 rounded-xl border text-xs flex items-start gap-2 ${f.level === "warn" ? "bg-amber-50 border-amber-200 text-amber-800" : "bg-gray-50 border-gray-200 text-gray-700"}`}>
+                    <AlertTriangle className={`w-4 h-4 shrink-0 mt-0.5 ${f.level === "warn" ? "text-amber-600" : "text-gray-400"}`} />
                     <span>{f.msg}</span>
                   </div>
                 ))
@@ -1814,16 +1763,16 @@ export default function App() {
                         <p className="text-[10px] text-gray-400">{getCat(r.category)?.name || r.category} · RM {r.amount.toLocaleString()}</p>
                       </div>
                       {r.image ? (
-                        <span className="shrink-0 flex items-center gap-1 text-emerald-600 font-bold text-[10px]"><CheckCircle2 className="w-3.5 h-3.5" /> Photo</span>
+                        <span className="shrink-0 flex items-center gap-1 text-emerald-700 font-bold text-[10px]"><CheckCircle2 className="w-3.5 h-3.5" /> Photo</span>
                       ) : (
-                        <span className="shrink-0 flex items-center gap-1 text-amber-600 font-bold text-[10px]"><AlertTriangle className="w-3.5 h-3.5" /> No photo</span>
+                        <span className="shrink-0 flex items-center gap-1 text-amber-700 font-bold text-[10px]"><AlertTriangle className="w-3.5 h-3.5" /> No photo</span>
                       )}
                     </div>
                   ))}
                 </div>
               )}
             </div>
-            <button onClick={exportPDF} className="w-full py-3 bg-gradient-to-r from-amber-500 to-amber-700 hover:from-amber-400 hover:to-amber-600 text-white font-extrabold rounded-2xl text-xs flex items-center justify-center gap-2 shadow">
+            <button onClick={exportPDF} className="w-full py-3 bg-gradient-to-r from-emerald-900 to-emerald-600 hover:from-emerald-950 hover:to-emerald-700 text-white font-extrabold rounded-2xl text-xs flex items-center justify-center gap-2 shadow">
               <FileText className="w-4 h-4" /> Download Checklist Summary (PDF)
             </button>
           </div>
@@ -1850,7 +1799,7 @@ export default function App() {
               </div>
 
               <div className="p-4 bg-gray-50 rounded-2xl border border-gray-200 space-y-2">
-                <p className="font-bold text-xs text-gray-800 flex items-center gap-1.5"><Home className="w-4 h-4 text-emerald-600" /> Rental Property Income</p>
+                <p className="font-bold text-xs text-gray-800 flex items-center gap-1.5"><Home className="w-4 h-4 text-emerald-700" /> Rental Property Income</p>
                 <div className="grid grid-cols-2 gap-2 text-xs">
                   <div><label className="text-[11px] font-semibold text-gray-600 block mb-1 min-h-[28px] leading-tight">Rental Collected (RM)</label><input type="number" value={rentalInc} onChange={e => setRentalInc(e.target.value)} className="w-full p-2.5 rounded-xl border border-gray-200 font-bold outline-none focus:ring-2 focus:ring-violet-400 bg-white" /></div>
                   <div><label className="text-[11px] font-semibold text-gray-600 block mb-1 min-h-[28px] leading-tight">Repairs & Assessment (RM)</label><input type="number" value={rentalExp} onChange={e => setRentalExp(e.target.value)} className="w-full p-2.5 rounded-xl border border-gray-200 font-bold outline-none focus:ring-2 focus:ring-violet-400 bg-white" /></div>
@@ -1891,8 +1840,8 @@ export default function App() {
                 <button onClick={closePaywall}><X className="w-5 h-5 text-gray-400" /></button>
               </div>
               <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl">
-                <p className="text-sm font-bold text-amber-900">Plus Feature: {paywallCtx.title}</p>
-                <p className="text-xs text-amber-700 mt-0.5">{paywallCtx.desc}</p>
+                <p className="text-sm font-bold text-orange-700">Plus Feature: {paywallCtx.title}</p>
+                <p className="text-xs text-orange-600 mt-0.5">{paywallCtx.desc}</p>
               </div>
               <div className="bg-gray-900 rounded-2xl p-5 text-white space-y-2">
                 <span className="font-bold text-sm text-gray-200">Plus Subscription</span>
@@ -1922,7 +1871,7 @@ export default function App() {
                     <div key={group} className="space-y-1">
                       <p className="text-[10px] font-black uppercase tracking-wider text-amber-300/90">{group}</p>
                       {items.map(f => (
-                        <div key={f} className="flex items-center gap-2 text-gray-200 pl-1"><Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" /> {f}</div>
+                        <div key={f} className="flex items-center gap-2 text-gray-200 pl-1"><Check className="w-3.5 h-3.5 text-amber-400 shrink-0" /> {f}</div>
                       ))}
                     </div>
                   ))}
@@ -1930,11 +1879,11 @@ export default function App() {
               </div>
               {!trialUsed ? (
                 <div className="space-y-2">
-                  <button onClick={startTrial} disabled={paymentLoading} className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-700 hover:from-amber-400 hover:to-amber-600 disabled:opacity-50 text-white font-extrabold transition shadow-md">Start 7-Day Free Trial</button>
+                  <button onClick={startTrial} disabled={paymentLoading} className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-amber-600 to-yellow-500 hover:from-amber-700 hover:to-amber-600 disabled:opacity-50 text-white font-extrabold transition shadow-md">Start 7-Day Free Trial</button>
                   <button onClick={subscribe} disabled={paymentLoading} className="w-full py-2.5 rounded-2xl bg-gray-100 hover:bg-gray-200 disabled:opacity-50 text-gray-700 font-bold text-xs transition">{paymentLoading ? "Redirecting to payment…" : `Skip trial, subscribe now — RM${PRICE.toFixed(2)}/yr`}</button>
                 </div>
               ) : (
-                <button onClick={subscribe} disabled={paymentLoading} className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-700 hover:from-amber-400 hover:to-amber-600 disabled:opacity-50 text-white font-extrabold transition shadow-md">{paymentLoading ? "Redirecting to payment…" : `Subscribe to Plus — RM${PRICE.toFixed(2)}/yr`}</button>
+                <button onClick={subscribe} disabled={paymentLoading} className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-amber-600 to-yellow-500 hover:from-amber-700 hover:to-amber-600 disabled:opacity-50 text-white font-extrabold transition shadow-md">{paymentLoading ? "Redirecting to payment…" : `Subscribe to Plus — RM${PRICE.toFixed(2)}/yr`}</button>
               )}
               {isTrialing ? (
                 <p className="text-center text-[11px] text-gray-400">Your free trial is active for {trialDaysLeft} more day{trialDaysLeft !== 1 ? "s" : ""} — subscribe anytime to keep Plus after it ends.</p>
@@ -1974,9 +1923,9 @@ export default function App() {
               <button onClick={() => { setShowFormBE(false); setShowTools(true); }}><X className="w-5 h-5 text-gray-400 shrink-0" /></button>
             </div>
 
-            <div className="bg-amber-50 border-b border-amber-100 px-5 py-3 flex items-center justify-between gap-3 text-xs text-amber-900">
-              <span className="flex items-center gap-1.5 font-medium"><ShieldAlert className="w-4 h-4 text-amber-600 shrink-0" /> Values are capped to official statutory limits automatically.</span>
-              <a href="https://mytax.hasil.gov.my" target="_blank" rel="noreferrer" className="font-bold text-amber-950 flex items-center gap-1 hover:underline shrink-0">Open MyTax <ExternalLink className="w-3 h-3" /></a>
+            <div className="bg-amber-50 border-b border-amber-100 px-5 py-3 flex items-center justify-between gap-3 text-xs text-orange-700">
+              <span className="flex items-center gap-1.5 font-medium"><ShieldAlert className="w-4 h-4 text-orange-600 shrink-0" /> Values are capped to official statutory limits automatically.</span>
+              <a href="https://mytax.hasil.gov.my" target="_blank" rel="noreferrer" className="font-bold text-orange-800 flex items-center gap-1 hover:underline shrink-0">Open MyTax <ExternalLink className="w-3 h-3" /></a>
             </div>
 
             <div className="p-5 space-y-5">
@@ -2032,7 +1981,7 @@ export default function App() {
             <div className="bg-white rounded-3xl p-5 border border-gray-200 shadow-sm space-y-4">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-gray-100 pb-3">
                 <div>
-                  <h3 className="font-bold text-base flex items-center gap-2"><Receipt className="w-5 h-5 text-emerald-600" /> YA {taxYear} Receipt Vault</h3>
+                  <h3 className="font-bold text-base flex items-center gap-2"><Receipt className="w-5 h-5 text-emerald-700" /> YA {taxYear} Receipt Vault</h3>
                   <p className="text-xs text-gray-400">Keep digital proof for 7 years (LHDN Section 82A audit requirement)</p>
                 </div>
                 <div className="flex gap-2">
@@ -2052,7 +2001,7 @@ export default function App() {
                   const ct = receipts.filter(r => (r.taxYear || 2026) === y).length;
                   const locked = y !== 2026 && !isPro;
                   return (
-                    <button key={y} onClick={() => locked ? openPaywall("7-Year Vault Access", "Free plan only covers the current tax year. Upgrade to view and export past years.", () => openVault()) : setTaxYear(y)} className={`shrink-0 p-2 rounded-xl border text-center transition relative min-w-[64px] ${taxYear === y ? "bg-emerald-600 text-white border-emerald-700 font-extrabold" : locked ? "bg-gray-50 text-gray-400 border-gray-200" : "bg-white text-gray-700 border-gray-200 hover:bg-gray-100 font-bold"}`}>
+                    <button key={y} onClick={() => locked ? openPaywall("7-Year Vault Access", "Free plan only covers the current tax year. Upgrade to view and export past years.", () => openVault()) : setTaxYear(y)} className={`shrink-0 p-2 rounded-xl border text-center transition relative min-w-[64px] ${taxYear === y ? "bg-gradient-to-r from-emerald-800 to-emerald-500 text-white border-emerald-900 font-extrabold" : locked ? "bg-gray-50 text-gray-400 border-gray-200" : "bg-white text-gray-700 border-gray-200 hover:bg-gray-100 font-bold"}`}>
                       {locked && <Lock className="w-3 h-3 absolute top-1 right-1 text-amber-500" />}
                       <span className="block text-[11px]">YA {y}</span>
                       <span className="block text-[9px] opacity-80">{ct} receipts</span>
@@ -2078,7 +2027,7 @@ export default function App() {
                   <p className="text-xs font-bold text-gray-600">No receipts for YA {taxYear}</p>
                   <p className="text-[11px] text-gray-400">Add receipts or use AI OCR to scan and auto-fill.</p>
                   <div className="flex gap-2 justify-center pt-1">
-                    <button onClick={() => { setForm(blank(taxYear)); setShowVault(false); openReceiptModal(() => setShowVault(true)); }} className="px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-700 text-white rounded-xl text-xs font-bold inline-flex items-center gap-1"><Plus className="w-3.5 h-3.5" /> Add</button>
+                    <button onClick={() => { setForm(blank(taxYear)); setShowVault(false); openReceiptModal(() => setShowVault(true)); }} className="px-4 py-2 bg-gradient-to-r from-emerald-800 to-emerald-500 text-white rounded-xl text-xs font-bold inline-flex items-center gap-1"><Plus className="w-3.5 h-3.5" /> Add</button>
                     <button onClick={() => isPro ? (() => { setShowVault(false); setReceiptReturnTo(() => () => setShowVault(true)); openScan(() => setShowReceipt(true)); })() : (() => { setShowVault(false); openPaywall("AI Receipt Scanner", "Snap a receipt and let AI fill in the details for you.", () => setShowVault(true)); })()} className="px-4 py-2 bg-gray-800 text-white rounded-xl text-xs font-bold inline-flex items-center gap-1">{isPro ? <Zap className="w-3.5 h-3.5 text-emerald-400" /> : <Lock className="w-3.5 h-3.5 text-amber-400" />} AI Scan</button>
                   </div>
                 </div>
@@ -2105,7 +2054,7 @@ export default function App() {
                         </div>
                         <div className="flex items-center gap-2 ml-2 shrink-0">
                           <span className="font-extrabold text-emerald-700 text-sm">RM {r.amount.toLocaleString()}</span>
-                          <button onClick={() => startEdit(r)} className="p-1.5 rounded-lg text-gray-400 hover:text-emerald-600"><Edit2 className="w-3.5 h-3.5" /></button>
+                          <button onClick={() => startEdit(r)} className="p-1.5 rounded-lg text-gray-400 hover:text-emerald-700"><Edit2 className="w-3.5 h-3.5" /></button>
                           <button onClick={() => handleDelete(r.id)} className="p-1.5 rounded-lg text-gray-400 hover:text-rose-500"><Trash2 className="w-3.5 h-3.5" /></button>
                         </div>
                       </div>
@@ -2135,12 +2084,12 @@ export default function App() {
                 <button onClick={() => { setShowSpouseDetail(false); setMaritalStatus("married"); openSettings("user", () => setShowSpouseDetail(true)); }} className="text-emerald-700 font-bold underline">Set marital status to Married in Profile</button>
               </div>
             ) : !isPro ? (
-              <button onClick={() => { setShowSpouseDetail(false); openPaywall("Detailed Household Assessment", "See a full category-by-category breakdown of who should claim what, not just the aggregate number.", () => setShowSpouseDetail(true)); }} className="w-full py-2.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 font-bold text-xs border border-amber-200 flex items-center justify-center gap-1.5"><Lock className="w-3.5 h-3.5" /> Unlock Detailed Analysis</button>
+              <button onClick={() => { setShowSpouseDetail(false); openPaywall("Detailed Household Assessment", "See a full category-by-category breakdown of who should claim what, not just the aggregate number.", () => setShowSpouseDetail(true)); }} className="w-full py-2.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold text-xs border border-emerald-200 flex items-center justify-center gap-1.5"><Lock className="w-3.5 h-3.5" /> Unlock Detailed Analysis</button>
             ) : spouseAnalysisDetailed && (
                         <div className="space-y-3">
                           <div className={`p-3 rounded-2xl border ${spouseAnalysisDetailed.recommended === "SEPARATE" ? "bg-emerald-50 border-emerald-300" : "bg-rose-50 border-rose-200"}`}>
                             <div className="flex items-center gap-1.5">
-                              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                              <CheckCircle2 className="w-4 h-4 text-emerald-700 shrink-0" />
                               <p className="font-extrabold text-sm text-gray-900">Recommended: {spouseAnalysisDetailed.recommended === "SEPARATE" ? "Separate Assessment" : spouseAnalysisDetailed.recommended === "JOINT" ? "Joint Assessment" : "Either — same result"}</p>
                             </div>
                             <p className="text-[11px] text-gray-600 mt-0.5">{spouseAnalysisDetailed.reasoning}</p>
@@ -2232,7 +2181,7 @@ export default function App() {
           <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-4 mx-auto my-8" onClick={(e) => e.stopPropagation()}>
             <div className="flex justify-between items-center border-b border-gray-100 pb-3">
               <div>
-                <h3 className="font-extrabold text-base flex items-center gap-2"><Settings className="w-5 h-5 text-emerald-600" /> Profile</h3>
+                <h3 className="font-extrabold text-base flex items-center gap-2"><Settings className="w-5 h-5 text-emerald-700" /> Profile</h3>
                 <p className="text-xs text-gray-400">Profile · Income · Spouse Optimizer · Devices</p>
               </div>
               <button onClick={closeSettings}><X className="w-5 h-5 text-gray-400" /></button>
@@ -2335,12 +2284,12 @@ export default function App() {
                     <div className="flex justify-between font-bold text-violet-700"><span>Zakat offset:</span><span>– {fmt(Math.min(parseFloat(zakatAmt) || 0, taxAfter))}</span></div>
                   )}
                   <div className="p-3 bg-emerald-100 rounded-xl flex justify-between items-center mt-1">
-                    <span className="font-extrabold text-xs text-emerald-900 tracking-wider">YOU'RE SAVING</span>
-                    <span className="font-extrabold text-xl text-emerald-900">{fmt(taxSaved)}</span>
+                    <span className="font-extrabold text-xs text-emerald-800 tracking-wider">YOU'RE SAVING</span>
+                    <span className="font-extrabold text-xl text-emerald-800">{fmt(taxSaved)}</span>
                   </div>
                   <div className={`p-3 rounded-xl flex justify-between items-center ${myBalance <= 0 ? "bg-white border border-emerald-200" : "bg-amber-50 border border-amber-200"}`}>
-                    <span className={`font-extrabold text-xs tracking-wider ${myBalance <= 0 ? "text-emerald-900" : "text-amber-900"}`}>{myBalance <= 0 ? "ESTIMATED REFUND" : "ESTIMATED BALANCE OWED"}</span>
-                    <span className={`font-extrabold text-xl ${myBalance <= 0 ? "text-emerald-900" : "text-amber-900"}`}>{fmt(Math.abs(myBalance))}</span>
+                    <span className={`font-extrabold text-xs tracking-wider ${myBalance <= 0 ? "text-emerald-700" : "text-amber-800"}`}>{myBalance <= 0 ? "ESTIMATED REFUND" : "ESTIMATED BALANCE OWED"}</span>
+                    <span className={`font-extrabold text-xl ${myBalance <= 0 ? "text-emerald-700" : "text-amber-800"}`}>{fmt(Math.abs(myBalance))}</span>
                   </div>
                   <p className="text-[10px] text-gray-500">Net tax payable (after zakat) minus PCB already deducted. Effective rate: {effRate}%</p>
                 </div>
@@ -2387,11 +2336,11 @@ export default function App() {
                       </div>
                     )}
                     <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 space-y-3 text-xs">
-                      <p className="font-bold text-emerald-900 text-sm">Quick Comparison:</p>
+                      <p className="font-bold text-emerald-800 text-sm">Quick Comparison:</p>
                       <div className="flex justify-between p-2 rounded-xl bg-white/60 border border-emerald-100"><span className="text-gray-600">Joint Filing Tax:</span><span className="font-extrabold text-rose-600">RM {spouseAnalysisDetailed.joint.totalTax.toLocaleString()}</span></div>
                       <div className="flex justify-between p-2 rounded-xl bg-white/60 border border-emerald-100"><span className="text-gray-600">Separate Filing:</span><span className="font-extrabold text-emerald-700">RM {spouseAnalysisDetailed.separate.totalTax.toLocaleString()}</span></div>
                       <div className="pt-2 border-t border-emerald-200 flex items-start gap-2">
-                        <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+                        <CheckCircle2 className="w-5 h-5 text-emerald-700 shrink-0 mt-0.5" />
                         <div><p className="font-extrabold text-sm text-emerald-800">{spouseAnalysisDetailed.recommended === "SEPARATE" ? "File Separately" : spouseAnalysisDetailed.recommended === "JOINT" ? "File Jointly" : "Either — same result"}</p><p className="text-[11px] text-emerald-700 font-normal">{spouseAnalysisDetailed.savings > 0 ? `Saves RM ${spouseAnalysisDetailed.savings.toLocaleString()} in household taxes` : "Both options result in the same tax"}</p></div>
                       </div>
                     </div>
@@ -2440,14 +2389,14 @@ export default function App() {
                     {!isPro ? (
                       <div className="p-5 bg-amber-50 border border-amber-200 rounded-2xl text-center space-y-3">
                         <Lock className="w-6 h-6 text-amber-500 mx-auto" />
-                        <p className="font-bold text-amber-900">Multi-Device Sync is a Plus feature</p>
-                        <p className="text-[11px] text-amber-700">Snap receipts on your phone, then pick up the exact same vault on your laptop at e-Filing time.</p>
-                        <button onClick={() => { setShowSettings(false); openPaywall("Multi-Device Cloud Sync", "Your account's ready — subscribe to enable syncing.", () => openSettings("sync")); }} className="w-full py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold">Unlock Device Sync</button>
+                        <p className="font-bold text-orange-700">Multi-Device Sync is a Plus feature</p>
+                        <p className="text-[11px] text-orange-600">Snap receipts on your phone, then pick up the exact same vault on your laptop at e-Filing time.</p>
+                        <button onClick={() => { setShowSettings(false); openPaywall("Multi-Device Cloud Sync", "Your account's ready — subscribe to enable syncing.", () => openSettings("sync")); }} className="w-full py-2.5 rounded-xl bg-amber-500 hover:bg-gradient-to-r from-amber-600 to-yellow-500 text-white font-bold">Unlock Device Sync</button>
                       </div>
                     ) : (
                       <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-200 space-y-3">
                         <div className="flex items-center justify-between">
-                          <span className="font-extrabold text-sm text-emerald-900 flex items-center gap-1.5"><Smartphone className="w-4 h-4" /> Cloud Sync</span>
+                          <span className="font-extrabold text-sm text-emerald-800 flex items-center gap-1.5"><Smartphone className="w-4 h-4" /> Cloud Sync</span>
                         </div>
                         <div className="bg-white p-3 rounded-xl border border-emerald-200 space-y-1">
                           {cloudSyncStatus === "loading" && <p className="text-gray-500 font-semibold flex items-center gap-1.5"><RefreshCw className="w-3.5 h-3.5 animate-spin" /> Syncing…</p>}
@@ -2463,7 +2412,7 @@ export default function App() {
               </div>
             )}
 
-            <button onClick={saveAll} className="w-full py-3.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold transition shadow-md">Save Settings</button>
+            <button onClick={saveAll} className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-emerald-800 to-emerald-500 hover:from-emerald-900 hover:to-emerald-600 text-white font-extrabold transition shadow-md">Save Settings</button>
           </div>
         </div>
       )}
@@ -2473,23 +2422,23 @@ export default function App() {
         <div className="fixed inset-0 z-[60] bg-gray-900/60 backdrop-blur-sm overflow-y-auto p-4" onClick={closeScan}>
           <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 mx-auto my-8" onClick={(e) => e.stopPropagation()}>
             <div className="flex justify-between items-center border-b border-gray-100 pb-3">
-              <h3 className="font-bold text-base flex items-center gap-2"><Zap className="w-5 h-5 text-emerald-600" /> AI Receipt Scanner (Budget 2026 Ready)</h3>
+              <h3 className="font-bold text-base flex items-center gap-2"><Zap className="w-5 h-5 text-emerald-700" /> AI Receipt Scanner (Budget 2026 Ready)</h3>
               <button onClick={closeScan}><X className="w-5 h-5 text-gray-400" /></button>
             </div>
             {ocrLoading ? (
               <div className="p-10 text-center space-y-4">
-                <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center mx-auto animate-pulse"><Sparkles className="w-8 h-8 text-emerald-600" /></div>
+                <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center mx-auto animate-pulse"><Sparkles className="w-8 h-8 text-emerald-700" /></div>
                 <p className="text-sm font-bold text-gray-700">AI analyzing receipt image…</p>
                 <p className="text-xs text-gray-400">Extracting merchant, amount, date & LHDN category</p>
               </div>
             ) : (
               <div className="space-y-4">
                 <div className="border-2 border-dashed border-emerald-200 rounded-2xl p-6 text-center space-y-3 bg-emerald-50">
-                  <Camera className="w-10 h-10 text-emerald-500 mx-auto" />
+                  <Camera className="w-10 h-10 text-emerald-600 mx-auto" />
                   <p className="text-sm font-bold text-gray-700">Upload or photograph your receipt</p>
                   <p className="text-xs text-gray-500">AI automatically detects CCTV, transit care, theme parks, NPRA vaccines & traditional claims.</p>
                   <label className="cursor-pointer inline-block">
-                    <div className="px-6 py-2.5 rounded-xl bg-emerald-600 text-white font-bold text-xs hover:bg-emerald-500 transition inline-flex items-center gap-2"><Upload className="w-4 h-4" /> Choose Receipt Photo</div>
+                    <div className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-800 to-emerald-500 text-white font-bold text-xs hover:bg-emerald-600 transition inline-flex items-center gap-2"><Upload className="w-4 h-4" /> Choose Receipt Photo</div>
                     <input type="file" accept="image/*" onChange={handleOCRUpload} className="hidden" />
                   </label>
                 </div>
@@ -2505,7 +2454,7 @@ export default function App() {
         <div className="fixed inset-0 z-[60] bg-gray-900/60 backdrop-blur-sm overflow-y-auto p-4" onClick={closeReceiptModal}>
           <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 mx-auto my-8" onClick={(e) => e.stopPropagation()}>
             <div className="flex justify-between items-center border-b border-gray-100 pb-3">
-              <h3 className="font-bold text-base flex items-center gap-2"><Plus className="w-4 h-4 text-emerald-600" />{editId ? "Edit Receipt" : `Add Receipt (YA ${form.taxYear || taxYear})`}</h3>
+              <h3 className="font-bold text-base flex items-center gap-2"><Plus className="w-4 h-4 text-emerald-700" />{editId ? "Edit Receipt" : `Add Receipt (YA ${form.taxYear || taxYear})`}</h3>
               <button onClick={closeReceiptModal}><X className="w-5 h-5 text-gray-400" /></button>
             </div>
             {!editId && (
@@ -2513,7 +2462,7 @@ export default function App() {
                 onClick={() => isPro ? (() => { setShowReceipt(false); openScan(() => setShowReceipt(true)); })() : (() => { setShowReceipt(false); openPaywall("AI Receipt Scanner", "Snap a receipt and let AI fill in merchant, amount, date and category for you.", () => setShowReceipt(true)); })()}
                 className="w-full py-2.5 rounded-xl bg-gray-50 hover:bg-gray-100 border border-dashed border-gray-300 text-gray-700 font-bold text-xs flex items-center justify-center gap-2 transition"
               >
-                {isPro ? <Zap className="w-4 h-4 text-emerald-500" /> : <Lock className="w-3.5 h-3.5 text-amber-500" />} Scan with AI instead {!isPro && <Crown className="w-3 h-3 text-amber-500" />}
+                {isPro ? <Zap className="w-4 h-4 text-emerald-600" /> : <Lock className="w-3.5 h-3.5 text-amber-500" />} Scan with AI instead {!isPro && <Crown className="w-3 h-3 text-amber-500" />}
               </button>
             )}
             <div className="space-y-3 text-xs">
@@ -2524,7 +2473,7 @@ export default function App() {
                   <span>{form.category ? `${getCat(form.category)?.name} (max RM ${getCatLimit(getCat(form.category)).toLocaleString()})` : "Select category…"}</span>
                   <ChevronDown className="w-4 h-4 text-gray-400" />
                 </button>
-                {form.category && (() => { const { rem } = getStats(form.category); const orig = editId ? (receipts.find(r => r.id === editId)?.amount || 0) : 0; const max = rem + orig; return max > 0 ? <p className="text-[11px] text-emerald-600 mt-1">RM {max.toLocaleString()} available to claim</p> : null; })()}
+                {form.category && (() => { const { rem } = getStats(form.category); const orig = editId ? (receipts.find(r => r.id === editId)?.amount || 0) : 0; const max = rem + orig; return max > 0 ? <p className="text-[11px] text-emerald-700 mt-1">RM {max.toLocaleString()} available to claim</p> : null; })()}
                 {form.category && getCat(form.category)?.note && (
                   <p className="text-[11px] text-gray-400 mt-1 leading-snug">ℹ️ {getCat(form.category).note}</p>
                 )}
@@ -2557,7 +2506,7 @@ export default function App() {
               </div>
               <div className="flex gap-2 pt-1">
                 <button onClick={closeReceiptModal} className="flex-1 py-2.5 rounded-xl bg-gray-100 text-gray-700 font-bold">Cancel</button>
-                <button onClick={editId ? handleUpdate : handleSave} className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-700 text-white font-bold hover:from-amber-400 hover:to-amber-600">{editId ? "Update" : "Vault Receipt"}</button>
+                <button onClick={editId ? handleUpdate : handleSave} className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-emerald-800 to-emerald-500 text-white font-bold hover:bg-emerald-600">{editId ? "Update" : "Vault Receipt"}</button>
               </div>
             </div>
           </div>
@@ -2568,14 +2517,14 @@ export default function App() {
       {showCatPick && (
         <div className="fixed inset-0 z-[70] bg-gray-900/70 backdrop-blur-sm overflow-y-auto" onClick={() => { setShowCatPick(false); setShowReceipt(true); }}>
           <div className="bg-white rounded-t-3xl sm:rounded-3xl max-w-md w-full p-5 shadow-2xl space-y-2 mx-auto my-8" onClick={(e) => e.stopPropagation()}>
-            <div className="flex justify-between items-center border-b border-gray-100 pb-3 sticky top-0 bg-white"><h3 className="font-bold text-base flex items-center gap-2"><Tag className="w-4 h-4 text-emerald-600" /> Select LHDN Category</h3><button onClick={() => { setShowCatPick(false); setShowReceipt(true); }}><X className="w-5 h-5 text-gray-400" /></button></div>
+            <div className="flex justify-between items-center border-b border-gray-100 pb-3 sticky top-0 bg-white"><h3 className="font-bold text-base flex items-center gap-2"><Tag className="w-4 h-4 text-emerald-700" /> Select LHDN Category</h3><button onClick={() => { setShowCatPick(false); setShowReceipt(true); }}><X className="w-5 h-5 text-gray-400" /></button></div>
             {GROUPS.map(g => (
               <div key={g}>
                 <p className="text-[10px] font-extrabold text-gray-400 uppercase tracking-wider px-2 py-1">{g}</p>
                 {CATS.filter(c => c.g === g).map(c => (
                   <button key={c.id} onClick={() => { setForm(f => ({ ...f, category: c.id, amount: "" })); setShowCatPick(false); setShowReceipt(true); }} className={`w-full text-left px-4 py-3 rounded-2xl text-xs font-bold flex items-center justify-between transition mb-1 ${form.category === c.id ? "bg-emerald-50 text-emerald-800 border border-emerald-200" : "text-gray-700 hover:bg-gray-50"}`}>
                     <div><p className="font-bold">{c.emoji} {c.name}</p><p className="text-[10px] text-gray-400 font-normal">Max RM {getCatLimit(c).toLocaleString()}</p></div>
-                    {form.category === c.id && <Check className="w-4 h-4 text-emerald-600" />}
+                    {form.category === c.id && <Check className="w-4 h-4 text-emerald-700" />}
                   </button>
                 ))}
               </div>
@@ -2588,10 +2537,10 @@ export default function App() {
       {showFilterPick && (
         <div className="fixed inset-0 z-[75] bg-gray-900/70 backdrop-blur-sm overflow-y-auto" onClick={() => { setShowFilterPick(false); setShowVault(true); }}>
           <div className="bg-white rounded-t-3xl sm:rounded-3xl max-w-md w-full p-5 shadow-2xl space-y-2 mx-auto my-8" onClick={(e) => e.stopPropagation()}>
-            <div className="flex justify-between items-center border-b border-gray-100 pb-3 sticky top-0 bg-white"><h3 className="font-bold text-base flex items-center gap-2"><Tag className="w-4 h-4 text-emerald-600" /> Filter by Category</h3><button onClick={() => { setShowFilterPick(false); setShowVault(true); }}><X className="w-5 h-5 text-gray-400" /></button></div>
+            <div className="flex justify-between items-center border-b border-gray-100 pb-3 sticky top-0 bg-white"><h3 className="font-bold text-base flex items-center gap-2"><Tag className="w-4 h-4 text-emerald-700" /> Filter by Category</h3><button onClick={() => { setShowFilterPick(false); setShowVault(true); }}><X className="w-5 h-5 text-gray-400" /></button></div>
             <button onClick={() => { setRcptCatF("all"); setShowFilterPick(false); setShowVault(true); }} className={`w-full text-left px-4 py-3 rounded-2xl text-xs font-bold flex items-center justify-between transition mb-1 ${rcptCatF === "all" ? "bg-emerald-50 text-emerald-800 border border-emerald-200" : "text-gray-700 hover:bg-gray-50"}`}>
               <span>All Categories</span>
-              {rcptCatF === "all" && <Check className="w-4 h-4 text-emerald-600" />}
+              {rcptCatF === "all" && <Check className="w-4 h-4 text-emerald-700" />}
             </button>
             {GROUPS.map(g => (
               <div key={g}>
@@ -2599,7 +2548,7 @@ export default function App() {
                 {CATS.filter(c => c.g === g).map(c => (
                   <button key={c.id} onClick={() => { setRcptCatF(c.id); setShowFilterPick(false); setShowVault(true); }} className={`w-full text-left px-4 py-3 rounded-2xl text-xs font-bold flex items-center justify-between transition mb-1 ${rcptCatF === c.id ? "bg-emerald-50 text-emerald-800 border border-emerald-200" : "text-gray-700 hover:bg-gray-50"}`}>
                     <div><p className="font-bold">{c.emoji} {c.name}</p><p className="text-[10px] text-gray-400 font-normal">Max RM {getCatLimit(c).toLocaleString()}</p></div>
-                    {rcptCatF === c.id && <Check className="w-4 h-4 text-emerald-600" />}
+                    {rcptCatF === c.id && <Check className="w-4 h-4 text-emerald-700" />}
                   </button>
                 ))}
               </div>
