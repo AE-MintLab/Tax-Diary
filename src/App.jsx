@@ -1395,7 +1395,7 @@ export default function App() {
 
       {/* Trial / Renewal Countdown Banner */}
       {isTrialing && (
-        <div className="bg-gradient-to-r from-emerald-900 via-emerald-600 to-emerald-900 text-white text-center text-xs font-bold py-2 px-4 flex items-center justify-center gap-2">
+        <div className="bg-gradient-to-r from-amber-500 to-amber-600 text-white text-center text-xs font-bold py-2 px-4 flex items-center justify-center gap-2">
           <Clock className="w-3.5 h-3.5" /> Plus trial: {trialDaysLeft} day{trialDaysLeft !== 1 ? "s" : ""} left
           <button onClick={() => openPaywall("Keep Plus Features", "Subscribe now so you never lose access when your trial ends.")} className="underline ml-1">Subscribe now — RM{PRICE.toFixed(2)}/yr</button>
         </div>
@@ -1411,13 +1411,13 @@ export default function App() {
           iOS shows manual "tap Share" instructions since iOS has no install API. */}
       {showInstallBanner && !isStandalone && (
         <div className="bg-gray-900 text-white text-xs font-bold py-2.5 px-4 flex items-center justify-center gap-3 flex-wrap">
-          <Smartphone className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+          <Smartphone className="w-3.5 h-3.5 text-gray-300 shrink-0" />
           {isIOS ? (
             <span>Install Tax Diary: tap <strong>Share</strong> below, then <strong>"Add to Home Screen"</strong></span>
           ) : (
             <>
               <span>Install Tax Diary for quick, offline access</span>
-              <button onClick={handleInstallClick} className="px-3 py-1 bg-gradient-to-r from-emerald-800 to-emerald-500 hover:from-emerald-900 hover:to-emerald-600 rounded-lg">Install</button>
+              <button onClick={handleInstallClick} className="px-3 py-1 bg-white text-gray-900 hover:bg-gray-100 font-bold rounded-lg transition">Install</button>
             </>
           )}
           <button onClick={dismissInstallBanner} className="text-gray-400 hover:text-white ml-1"><X className="w-3.5 h-3.5" /></button>
