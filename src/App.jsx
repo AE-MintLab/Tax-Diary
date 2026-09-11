@@ -1517,7 +1517,7 @@ export default function App() {
         {/* Quick Actions */}
 <button 
   onClick={() => { setForm(blank(taxYear)); setEditId(null); setShowReceipt(true); }} 
-  className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-[#D4A017] to-[#E5C158] hover:from-[#B88B11] hover:to-[#D4A017] text-white font-black text-sm shadow-md hover:shadow-lg flex items-center justify-center gap-2 active:scale-98 transition duration-200">
+  className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-emerald-800 to-emerald-500 hover:from-emerald-900 hover:to-emerald-600 text-white font-black text-sm shadow-md hover:shadow-lg flex items-center justify-center gap-2 active:scale-98 transition duration-200">
   <Plus className="w-4 h-4 stroke-[3]" /> Add Receipt
 </button>
   
