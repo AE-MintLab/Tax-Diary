@@ -95,7 +95,14 @@ const CATS = [
 ];
 
 const GROUPS    = ["Financial", "Medical", "Education", "Lifestyle", "Property", "Other"];
-const AUDIT_YRS = [2026, 2025, 2024, 2023, 2022, 2021, 2020];
+// Single source of truth for "which YA is this app currently built for."
+// Bumping this to 2027 next year updates every display string and the
+// countdown-card logic in one place. It does NOT update BRACKETS, POOL_LIMITS,
+// or any relief cap below — those are LHDN's actual YA2026 figures and need to
+// be re-verified against the new year's Budget/gazette by hand regardless.
+const CURRENT_YA = 2026;
+const PRICE = 29;
+const AUDIT_YRS = Array.from({ length: 7 }, (_, i) => CURRENT_YA - i);
 const BRACKETS  = [
   { max: 5000,     rate: 0.00, base: 0      },
   { max: 20000,    rate: 0.01, base: 0      },
@@ -111,15 +118,47 @@ const BRACKETS  = [
 ];
 
 const SLIDES = [
-  { badge: "🗂️ SMART TAX VAULT",   headline: "STRESS-FREE\ne-FILING YA 2026", body: "Store LHDN receipts securely with full Budget 2026 updates (CCTV, Transit & Tourism). Be audit-ready for 7 years.", bg: "from-emerald-950 via-emerald-900 to-gray-900" },
-  { badge: "💡 SMART SUGGESTIONS", headline: "MAXIMIZE YOUR\nREFUNDS", body: "Tax Diary flags unclaimed YA 2026 opportunities and calculates exact ringgit tax savings in real-time.", bg: "from-emerald-950 via-gray-900 to-emerald-950" },
-  { badge: "👑 TRY VAULT FREE",    headline: "7 DAYS FREE\nTHEN RM19/YR", body: "Unlock AI receipt scanning, the Audit-Ready Checklist, Form BE sheet & multi-device cloud sync.", bg: "from-gray-950 via-emerald-950 to-emerald-950" },
+  {
+    badge: "🗂️ ORGANISE",
+    headline: "NEVER LOSE A\nRECEIPT AGAIN.",
+    body: "Keep your tax receipts organised in one place — so when e-Filing comes around, you don't have to dig through WhatsApp, email, drawers and photo galleries.",
+    tagline: "Your receipts. One Tax Diary.",
+    bg: "from-emerald-950 via-emerald-900 to-gray-900",
+  },
+  {
+    badge: "💡 DISCOVER",
+    headline: "SEE WHAT ELSE\nYOU CAN CLAIM.",
+    body: "Track your tax reliefs as you record — and spot eligible expenses you might otherwise forget to claim.",
+    tagline: "Know what you've claimed. Know what you've missed.",
+    bg: "from-emerald-950 via-gray-900 to-emerald-950",
+  },
+  {
+    badge: "💰 KNOW YOUR NUMBER",
+    headline: "KNOW WHAT\nYOU'LL GET BACK.",
+    body: `See your estimated YA ${CURRENT_YA} tax refund as you build your Tax Diary — or find out if you may need to pay more.`,
+    tagline: "No more guessing at tax time.",
+    bg: "from-gray-950 via-emerald-950 to-emerald-950",
+  },
 ];
+
+// Monthly-income brackets for the post-slide setup wizard. Picking a bracket
+// (not an exact figure) is enough for a starting tax estimate — Malaysia's
+// brackets are wide, and the person can enter their exact income later in
+// Settings. `monthly` is just the representative value used to seed `income`
+// and a rough EPF default (11%) until they do.
+const INCOME_RANGES = [
+  { key: "u35",     label: "< RM 3,500",           sub: "Generally below the tax threshold", monthly: 3000 },
+  { key: "35-60",   label: "RM 3,500 – RM 6,000",   monthly: 4750 },
+  { key: "60-100",  label: "RM 6,001 – RM 10,000",  monthly: 8000 },
+  { key: "100-150", label: "RM 10,001 – RM 15,000", monthly: 12500 },
+  { key: "150up",   label: "> RM 15,000",           monthly: 18000 },
+];
+const CHILD_COUNT_OPTIONS = [0, 1, 2, 3, 4];
 
 const DAY = 86400000;
 const YEAR = 365 * DAY;
-const PRICE = 29;
 const DONATION_URL = "https://toyyibpay.com/YOUR_OPEN_AMOUNT_BILL_CODE"; // TODO: replace with your real ToyyibPay open-amount payment link (create one from your ToyyibPay dashboard — no code needed, just paste the resulting URL here)
+
 
 const calcTax  = (inc) => { if (!inc || inc <= 0) return 0; let p = 0; for (const b of BRACKETS) { if (inc <= b.max) return b.base + (inc - p) * b.rate; p = b.max; } return 0; };
 // RM400 personal rebate if chargeable <= RM35,000. An ADDITIONAL RM400 applies on the same
@@ -134,13 +173,17 @@ const taxWithRebate = (chg, spouseRebateEligible = false) => {
 };
 const marginalRate = (inc) => { for (const b of BRACKETS) { if (inc <= b.max) return b.rate; } return 0.30; };
 const fmt      = (n, d = 2) => "RM " + Number(n).toLocaleString("en-MY", { minimumFractionDigits: d, maximumFractionDigits: d });
-const blank    = (yr = 2026) => ({ category: "", amount: "", merchant: "", date: new Date().toISOString().slice(0, 10), image: null, taxYear: yr, owner: "joint" });
+const blank    = (yr = CURRENT_YA) => ({ category: "", amount: "", merchant: "", date: new Date().toISOString().slice(0, 10), image: null, taxYear: yr, owner: "joint" });
 
 // ── Main App Component ────────────────────────────────────────────────────────
 export default function App() {
   const [view,         setView]         = useState("loading");
   const [slideIdx,     setSlideIdx]     = useState(0);
-  const [taxYear,      setTaxYear]      = useState(2026);
+  const [setupStep,    setSetupStep]    = useState(1);
+  const [selectedIncomeRangeKey, setSelectedIncomeRangeKey] = useState(null);
+  const [spouseWorkingSel, setSpouseWorkingSel] = useState(null); // "working" | "not" | null (mirrors spouseInc for the setup wizard's pill highlight)
+  const [profileSetupSkipped, setProfileSetupSkipped] = useState(false);
+  const [taxYear,      setTaxYear]      = useState(CURRENT_YA);
   const [receipts,     setReceipts]     = useState([]);
   const [income,       setIncome]       = useState("");
   const [otherIncomeAmt, setOtherIncomeAmt] = useState("0");
@@ -350,12 +393,45 @@ export default function App() {
       // Firebase's onAuthStateChanged listener (see below), which is the real
       // source of truth for whether someone is actually signed in.
 
-      setView(ob?.value ? "home" : "onboard");
+      const su = await store.get("mc26-setup");
+      if (su?.value === "skipped") setProfileSetupSkipped(true);
+
+      setView(!ob?.value ? "onboard" : !su?.value ? "setup" : "home");
       hydrated.current = true;
     } catch { setView("home"); hydrated.current = true; }
   };
 
-  const doneOnboard = async () => { try { await store.set("mc26-onboard", "1"); } catch {} setView("home"); };
+  const doneOnboard = async () => { try { await store.set("mc26-onboard", "1"); } catch {} setSetupStep(1); setView("setup"); };
+  const replayOnboarding = async () => {
+    try {
+      if (window.storage?.delete) { await window.storage.delete("mc26-onboard"); await window.storage.delete("mc26-setup"); }
+      else { localStorage.removeItem("mc26-onboard"); localStorage.removeItem("mc26-setup"); }
+    } catch {}
+    setSlideIdx(0);
+    setSetupStep(1);
+    setView("onboard");
+  };
+
+  // ── Setup wizard (Name → Income range → Marital/Household) ─────────────────
+  const selectIncomeRange = (r) => {
+    setSelectedIncomeRangeKey(r.key);
+    setIncome(String(r.monthly * 12));
+    setEpfAmt(String(Math.round(r.monthly * 12 * 0.11)));
+  };
+  const selectSpouseWorking = (working) => {
+    setSpouseWorkingSel(working ? "working" : "not");
+    setSpouseInc(working ? (spouseInc === "0" ? "" : spouseInc) : "0");
+  };
+  const finishSetup = async (skipped = false) => {
+    try { await store.set("mc26-setup", skipped ? "skipped" : "done"); } catch {}
+    setProfileSetupSkipped(skipped);
+    if (!skipped) { await persistIncome(); await persistSettings(); }
+    setView("home");
+  };
+  const dismissSetupBanner = async () => {
+    setProfileSetupSkipped(false);
+    try { await store.set("mc26-setup", "done"); } catch {}
+  };
 
   const persist = async (list) => {
     const next = Array.isArray(list) ? list : [];
@@ -561,7 +637,7 @@ export default function App() {
   // receipt can never block the ENTIRE cloud sync from succeeding.
   const sanitizeReceiptForCloud = (r) => ({
     id: typeof r.id === "number" ? r.id : Date.now(),
-    taxYear: typeof r.taxYear === "number" ? r.taxYear : 2026,
+    taxYear: typeof r.taxYear === "number" ? r.taxYear : CURRENT_YA,
     category: typeof r.category === "string" ? r.category : "lifestyle",
     amount: typeof r.amount === "number" && isFinite(r.amount) ? r.amount : 0,
     merchant: typeof r.merchant === "string" ? r.merchant : "",
@@ -935,7 +1011,7 @@ export default function App() {
   };
 
   // ── Computed Stats & Calculations ──────────────────────────────────────────
-  const activeR  = useMemo(() => receipts.filter(r => (r.taxYear || 2026) === taxYear), [receipts, taxYear]);
+  const activeR  = useMemo(() => receipts.filter(r => (r.taxYear || CURRENT_YA) === taxYear), [receipts, taxYear]);
   const getCat   = (id) => CATS.find(c => c.id === id);
   const getCatLimit = (c, incomeOverride) => {
     if (!c) return 0;
@@ -1125,8 +1201,8 @@ export default function App() {
 
   const today    = new Date();
   const yearEnd  = new Date(taxYear, 11, 31);
-  const daysLeft = taxYear === 2026 ? Math.max(Math.ceil((yearEnd - today) / DAY), 0) : 0;
-  const yearPct  = taxYear === 2026 ? Math.min(Math.round(((365 - daysLeft) / 365) * 100), 100) : 100;
+  const daysLeft = taxYear === CURRENT_YA ? Math.max(Math.ceil((yearEnd - today) / DAY), 0) : 0;
+  const yearPct  = taxYear === CURRENT_YA ? Math.min(Math.round(((365 - daysLeft) / 365) * 100), 100) : 100;
   const opps     = useMemo(() => CATS.map(c => ({ ...c, ...getStats(c.id) })).filter(c => c.rem > 0).sort((a, b) => b.rem - a.rem), [activeR, taxYear]);
   const filteredR= useMemo(() => activeR.filter(r => {
     const ms = (r.merchant || "").toLowerCase().includes(rcptSearch.toLowerCase());
@@ -1157,7 +1233,7 @@ export default function App() {
     closeReceiptModal();
   };
   const handleDelete = async (id) => { await persist(receipts.filter(r => r.id !== id)); showToast("Deleted from vault"); };
-  const startEdit = (r) => { setForm({ category: r.category, amount: String(r.amount), merchant: r.merchant || "", date: r.date, image: r.image || null, taxYear: r.taxYear || 2026, owner: r.owner || "joint" }); setEditId(r.id); setShowVault(false); openReceiptModal(() => setShowVault(true)); };
+  const startEdit = (r) => { setForm({ category: r.category, amount: String(r.amount), merchant: r.merchant || "", date: r.date, image: r.image || null, taxYear: r.taxYear || CURRENT_YA, owner: r.owner || "joint" }); setEditId(r.id); setShowVault(false); openReceiptModal(() => setShowVault(true)); };
 
   // Compresses a photo down to reasonable dimensions/quality via canvas before
   // it's stored — modern phone cameras routinely produce 3-8MB photos, which
@@ -1200,7 +1276,7 @@ export default function App() {
   };
 
   const exportCSV = () => {
-    if (taxYear !== 2026 && !requireProOrPaywall("7-Year Vault Access", "Free plan only covers the current tax year. Upgrade to view and export past years.")) return;
+    if (taxYear !== CURRENT_YA && !requireProOrPaywall("7-Year Vault Access", "Free plan only covers the current tax year. Upgrade to view and export past years.")) return;
     const rows = activeR.map(r => `${r.date},"${getCat(r.category)?.name || r.category}","${r.merchant || ""}",${r.amount}`);
     const csv = [`Tax Diary – YA ${taxYear}`, "Date,Category,Merchant,Amount (RM)", ...rows].join("\n");
     const a = document.createElement("a");
@@ -1211,7 +1287,7 @@ export default function App() {
   };
 
   const exportPDF = () => {
-    if (taxYear !== 2026 && !requireProOrPaywall("7-Year Vault Access", "Free plan only covers the current tax year. Upgrade to view and export past years.")) return;
+    if (taxYear !== CURRENT_YA && !requireProOrPaywall("7-Year Vault Access", "Free plan only covers the current tax year. Upgrade to view and export past years.")) return;
     if (!requireProOrPaywall("PDF Audit Export", "Compile all receipts into one audit-ready PDF file.")) return;
     const pdf = new jsPDF();
     pdf.setFontSize(16);
@@ -1362,6 +1438,7 @@ export default function App() {
             <p className="text-emerald-300 text-xs font-bold tracking-widest uppercase">{sl.badge.slice(3)}</p>
             <h1 className="text-4xl font-black text-white leading-tight whitespace-pre-line">{sl.headline}</h1>
             <p className="text-gray-300 text-sm leading-relaxed max-w-xs mx-auto">{sl.body}</p>
+            <p className="text-emerald-300 text-xs font-bold pt-1">{sl.tagline}</p>
           </div>
         </div>
         <div className="p-8 space-y-6">
@@ -1371,6 +1448,120 @@ export default function App() {
               <ArrowRight className="w-6 h-6 stroke-[2.5]" />
             </button>
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (view === "setup") {
+    const stepTitles = ["What should we call you?", "What's your monthly income?", "Tell us about your household"];
+    const stepSubs = [
+      "Just so the app can greet you properly.",
+      "Gives us a starting estimate — fine-tune the exact figure anytime in Settings.",
+      "Helps us apply the right reliefs from day one.",
+    ];
+    const pillBase = "py-3 px-4 rounded-2xl border-2 font-bold text-sm text-center transition";
+    const pillOn = "bg-emerald-500 border-emerald-400 text-white";
+    const pillOff = "bg-white/5 border-white/15 text-gray-200 hover:border-white/30";
+    const isWelcome = setupStep === 4;
+
+    return (
+      <div className="fixed inset-0 bg-gradient-to-br from-gray-950 via-emerald-950 to-gray-950 flex flex-col overflow-y-auto select-none">
+        {!isWelcome && (
+          <div className="flex justify-between items-center p-6 shrink-0">
+            {setupStep > 1 ? (
+              <button onClick={() => setSetupStep(p => p - 1)} className="text-gray-300 text-xs font-bold px-3 py-1.5 rounded-full bg-white/10 border border-white/20">← Back</button>
+            ) : <span />}
+            <div className="flex gap-1.5">
+              {[1, 2, 3].map(s => (<div key={s} className={`rounded-full transition-all ${setupStep === s ? "w-6 h-2 bg-emerald-400" : "w-2 h-2 bg-white/25"}`} />))}
+            </div>
+            <button onClick={() => finishSetup(true)} className="text-gray-300 text-xs font-bold px-3 py-1.5 rounded-full bg-white/10 border border-white/20">Skip</button>
+          </div>
+        )}
+
+        <div className="flex-1 flex flex-col justify-center px-6 pb-10 max-w-md w-full mx-auto space-y-6">
+          {isWelcome ? (
+            <div className="text-center space-y-5">
+              <div className="w-16 h-16 rounded-2xl bg-emerald-500 flex items-center justify-center mx-auto shadow-lg"><CheckCircle2 className="w-8 h-8 text-white" /></div>
+              <div className="space-y-2">
+                <h1 className="text-2xl font-black text-white">Welcome to Tax Diary{clientName ? `, ${clientName}` : ""}!</h1>
+                <p className="text-sm text-gray-400 leading-relaxed max-w-xs mx-auto">You're all set up. You can edit your profile anytime in Settings.</p>
+              </div>
+              <button
+                onClick={() => finishSetup(false)}
+                className="w-full py-3.5 rounded-2xl bg-white text-gray-900 font-black text-sm shadow-xl hover:bg-emerald-400 hover:text-white transition active:scale-95 flex items-center justify-center gap-2"
+              >
+                Start your Tax Diary <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
+          ) : (
+            <>
+              <div className="text-center space-y-1.5">
+                <h1 className="text-2xl font-black text-white">{stepTitles[setupStep - 1]}</h1>
+                <p className="text-xs text-gray-400 leading-relaxed max-w-xs mx-auto">{stepSubs[setupStep - 1]}</p>
+              </div>
+
+              {setupStep === 1 && (
+                <input
+                  type="text"
+                  value={clientName}
+                  onChange={e => setClientName(e.target.value)}
+                  placeholder="e.g. Ahmad Ridzuan"
+                  autoFocus
+                  className="w-full p-4 rounded-2xl bg-white/10 border-2 border-white/15 focus:border-emerald-400 text-white font-bold text-base text-center outline-none placeholder:text-gray-500"
+                />
+              )}
+
+              {setupStep === 2 && (
+                <div className="space-y-2.5">
+                  {INCOME_RANGES.map(r => (
+                    <button key={r.key} onClick={() => selectIncomeRange(r)} className={`w-full ${pillBase} flex items-center justify-between ${selectedIncomeRangeKey === r.key ? pillOn : pillOff}`}>
+                      <span>{r.label}</span>
+                      {r.sub && <span className={`text-[10px] font-medium normal-case ${selectedIncomeRangeKey === r.key ? "text-emerald-50" : "text-gray-500"}`}>{r.sub}</span>}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {setupStep === 3 && (
+                <div className="space-y-5">
+                  <div className="space-y-2">
+                    <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Marital Status</p>
+                    <div className="grid grid-cols-2 gap-2.5">
+                      <button onClick={() => setMaritalStatus("single")} className={`${pillBase} ${maritalStatus === "single" ? pillOn : pillOff}`}>Single</button>
+                      <button onClick={() => setMaritalStatus("married")} className={`${pillBase} ${maritalStatus === "married" ? pillOn : pillOff}`}>Married</button>
+                    </div>
+                  </div>
+
+                  {hasSpouse && (
+                    <div className="space-y-2">
+                      <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Is your spouse working?</p>
+                      <div className="grid grid-cols-2 gap-2.5">
+                        <button onClick={() => selectSpouseWorking(true)} className={`${pillBase} ${spouseWorkingSel === "working" ? pillOn : pillOff}`}>Working</button>
+                        <button onClick={() => selectSpouseWorking(false)} className={`${pillBase} ${spouseWorkingSel === "not" ? pillOn : pillOff}`}>Not working</button>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="space-y-2">
+                    <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Children under 18</p>
+                    <div className="grid grid-cols-5 gap-2">
+                      {CHILD_COUNT_OPTIONS.map(n => (
+                        <button key={n} onClick={() => setChildU18(n)} className={`${pillBase} px-1 ${childU18 === n ? pillOn : pillOff}`}>{n === 4 ? "4+" : n}</button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <button
+                onClick={() => setSetupStep(p => p + 1)}
+                className="w-full py-3.5 rounded-2xl bg-white text-gray-900 font-black text-sm shadow-xl hover:bg-emerald-400 hover:text-white transition active:scale-95"
+              >
+                Continue
+              </button>
+            </>
+          )}
         </div>
       </div>
     );
@@ -1435,7 +1626,7 @@ export default function App() {
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">YA {taxYear}</span>
                 {isPro && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-300 flex items-center gap-1"><Crown className="w-3 h-3" /> Plus</span>}
               </div>
-              <p className="text-[10px] text-gray-400 hidden sm:block">LHDN e-Filing Relief Organizer · Budget 2026 Ready</p>
+              <p className="text-[10px] text-gray-400 hidden sm:block">LHDN e-Filing Relief Organizer · Budget {CURRENT_YA} Ready</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -1461,6 +1652,15 @@ export default function App() {
       </div>
 
       <main className="flex-1 max-w-6xl w-full mx-auto p-4 space-y-4 pb-24">
+
+{profileSetupSkipped && (
+  <div className="flex items-center justify-between gap-3 p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200">
+    <button onClick={() => openSettings("user")} className="flex-1 text-left text-xs font-bold text-emerald-800">
+      Complete your profile to unlock accurate tax savings calculations →
+    </button>
+    <button onClick={dismissSetupBanner} className="text-emerald-700 shrink-0"><X className="w-4 h-4" /></button>
+  </div>
+)}
 
 {/* Hero Banner — Dark Emerald, Deep Gradient (locked palette) */}
 <div className="bg-gradient-to-br from-[#03140E] via-[#065F46] to-[#10B981] backdrop-blur-md rounded-3xl p-5 sm:p-6 shadow-xl border border-[#10B981]/30 relative overflow-hidden space-y-4">
@@ -1500,11 +1700,11 @@ export default function App() {
         
 
 
-        {taxYear === 2026 && (
+        {taxYear === CURRENT_YA && (
           <div className={`bg-white p-4 rounded-3xl border shadow-sm space-y-2 ${daysLeft <= 30 ? "border-red-200" : daysLeft <= 90 ? "border-amber-200" : "border-gray-200"}`}>
             <div className="flex justify-between text-xs font-bold">
-              <span className="flex items-center gap-1.5"><Calendar className="w-4 h-4 text-emerald-700" /> YA 2026 Planning Window</span>
-              <span className={daysLeft <= 30 ? "text-red-600" : daysLeft <= 90 ? "text-amber-600" : "text-gray-600"}>{daysLeft > 0 ? `${daysLeft} days to 31 Dec 2026` : "Year closed"}</span>
+              <span className="flex items-center gap-1.5"><Calendar className="w-4 h-4 text-emerald-700" /> YA {CURRENT_YA} Planning Window</span>
+              <span className={daysLeft <= 30 ? "text-red-600" : daysLeft <= 90 ? "text-amber-600" : "text-gray-600"}>{daysLeft > 0 ? `${daysLeft} days to 31 Dec ${CURRENT_YA}` : "Year closed"}</span>
             </div>
             <div className="bg-gray-100 h-2.5 rounded-full overflow-hidden"><div className={`h-full rounded-full ${daysLeft <= 30 ? "bg-red-500" : daysLeft <= 90 ? "bg-amber-400" : "bg-emerald-600"}`} style={{ width: `${yearPct}%` }} /></div>
             <div className="flex justify-between text-xs text-gray-500">
@@ -1998,8 +2198,8 @@ export default function App() {
                   switching tax years lives right where the receipts themselves do. */}
               <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
                 {AUDIT_YRS.map(y => {
-                  const ct = receipts.filter(r => (r.taxYear || 2026) === y).length;
-                  const locked = y !== 2026 && !isPro;
+                  const ct = receipts.filter(r => (r.taxYear || CURRENT_YA) === y).length;
+                  const locked = y !== CURRENT_YA && !isPro;
                   return (
                     <button key={y} onClick={() => locked ? openPaywall("7-Year Vault Access", "Free plan only covers the current tax year. Upgrade to view and export past years.", () => openVault()) : setTaxYear(y)} className={`shrink-0 p-2 rounded-xl border text-center transition relative min-w-[64px] ${taxYear === y ? "bg-gradient-to-r from-emerald-800 to-emerald-500 text-white border-emerald-900 font-extrabold" : locked ? "bg-gray-50 text-gray-400 border-gray-200" : "bg-white text-gray-700 border-gray-200 hover:bg-gray-100 font-bold"}`}>
                       {locked && <Lock className="w-3 h-3 absolute top-1 right-1 text-amber-500" />}
@@ -2214,6 +2414,9 @@ export default function App() {
                   </div>
                   <button onClick={() => setIsSelfOKU(!isSelfOKU)} className={`w-12 h-6 rounded-full flex items-center p-1 transition-colors shrink-0 ml-3 ${isSelfOKU ? "bg-emerald-600 justify-end" : "bg-gray-300 justify-start"}`}><span className="w-4 h-4 bg-white rounded-full shadow" /></button>
                 </div>
+                <button onClick={replayOnboarding} className="w-full py-2.5 rounded-xl bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-600 font-bold text-xs flex items-center justify-center gap-1.5 transition">
+                  <RefreshCw className="w-3.5 h-3.5" /> Replay Intro Slides
+                </button>
               </div>
             )}
 
@@ -2422,7 +2625,7 @@ export default function App() {
         <div className="fixed inset-0 z-[60] bg-gray-900/60 backdrop-blur-sm overflow-y-auto p-4" onClick={closeScan}>
           <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 mx-auto my-8" onClick={(e) => e.stopPropagation()}>
             <div className="flex justify-between items-center border-b border-gray-100 pb-3">
-              <h3 className="font-bold text-base flex items-center gap-2"><Zap className="w-5 h-5 text-emerald-700" /> AI Receipt Scanner (Budget 2026 Ready)</h3>
+              <h3 className="font-bold text-base flex items-center gap-2"><Zap className="w-5 h-5 text-emerald-700" /> AI Receipt Scanner (Budget {CURRENT_YA} Ready)</h3>
               <button onClick={closeScan}><X className="w-5 h-5 text-gray-400" /></button>
             </div>
             {ocrLoading ? (
