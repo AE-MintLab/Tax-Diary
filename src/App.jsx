@@ -1662,15 +1662,18 @@ export default function App() {
   </div>
 )}
 
-{/* Hero Banner — Teal + Sunshine Yellow, light gradient (per locked palette v2) */}
-<div className="bg-gradient-to-br from-[#20BFAE] via-[#4FD1A5] to-[#FFC928] rounded-3xl p-5 sm:p-6 shadow-xl relative overflow-hidden space-y-4">
+{/* Hero Banner — Teal + Sunshine Yellow, softened gradient + mascot (locked palette v2.1) */}
+<div className="bg-gradient-to-br from-[#20BFAE] via-[#8FDDB0] to-[#FFEAA8] rounded-3xl p-5 sm:p-6 shadow-xl relative overflow-hidden space-y-4">
   <div className="absolute -top-10 -right-10 w-32 h-32 bg-white/20 rounded-full blur-2xl pointer-events-none" />
-  <div className="absolute -bottom-14 -left-10 w-40 h-40 bg-[#FF9F43]/20 rounded-full blur-2xl pointer-events-none" />
+  <div className="absolute -bottom-14 -left-10 w-40 h-40 bg-[#FF9F43]/15 rounded-full blur-2xl pointer-events-none" />
 
-  {/* Header Section — navy carries the weight here, not the background color */}
-  <div className="border-b border-[#173B67]/15 pb-4 relative">
-    <h1 className="text-xl sm:text-2xl font-black tracking-tight text-[#173B67]">Salam{clientName ? `, ${clientName}` : ""} 👋</h1>
-    <p className="text-xs text-[#173B67]/70 font-semibold">Track YA {taxYear} reliefs · Log receipts · Maximize your refund before 31 Dec {taxYear}</p>
+  {/* Header Section — navy carries the weight here, mascot gives it personality */}
+  <div className="border-b border-[#173B67]/15 pb-4 relative flex items-center justify-between gap-3">
+    <div>
+      <h1 className="text-xl sm:text-2xl font-black tracking-tight text-[#173B67]">Salam{clientName ? `, ${clientName}` : ""} 👋</h1>
+      <p className="text-xs text-[#173B67]/70 font-semibold">Track YA {taxYear} reliefs · Log receipts · Maximize your refund before 31 Dec {taxYear}</p>
+    </div>
+    <img src="/icons/icon-512.png" alt="" className="w-14 h-14 sm:w-16 sm:h-16 object-contain shrink-0 drop-shadow-md" />
   </div>
 
   {/* Inner Dashboard Cards Grid — white cards so the teal numbers pop,
