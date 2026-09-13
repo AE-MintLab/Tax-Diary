@@ -1699,7 +1699,7 @@ export default function App() {
         switches to warm orange for owed (matching the same "owed" treatment
         used everywhere else in the app: Settings summary, spouse comparison) */}
     <div className={`p-3 rounded-2xl shadow-sm ${myBalance <= 0 ? "bg-white/90" : "bg-[#FDEDF2]"}`}>
-      <p className={`text-[10px] font-black uppercase tracking-wider ${myBalance <= 0 ? "text-[#20BFAE]" : "text-[#F7A9C4]"}`}>
+      <p className={`text-[10px] font-black uppercase tracking-wider ${myBalance <= 0 ? "text-[#20BFAE]" : "text-[#FF77A9]"}`}>
         {myBalance <= 0 ? "Est. Refund" : "Est. Balance Owed"}
       </p>
       <p className={`text-lg sm:text-2xl font-black mt-0.5 ${myBalance <= 0 ? "text-[#173B67]" : "text-[#D6577F]"}`}>
