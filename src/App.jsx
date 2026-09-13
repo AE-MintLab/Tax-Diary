@@ -1698,14 +1698,14 @@ export default function App() {
     {/* Left Card: Est. Refund / Balance Owed — stays teal/navy for a refund,
         switches to warm orange for owed (matching the same "owed" treatment
         used everywhere else in the app: Settings summary, spouse comparison) */}
-    <div className={`p-3 rounded-2xl shadow-sm ${myBalance <= 0 ? "bg-white/90" : "bg-[#FFF4E5]"}`}>
-      <p className={`text-[10px] font-black uppercase tracking-wider ${myBalance <= 0 ? "text-[#20BFAE]" : "text-[#FF9F43]"}`}>
+    <div className={`p-3 rounded-2xl shadow-sm ${myBalance <= 0 ? "bg-white/90" : "bg-[#FDEDF2]"}`}>
+      <p className={`text-[10px] font-black uppercase tracking-wider ${myBalance <= 0 ? "text-[#20BFAE]" : "text-[#F7A9C4]"}`}>
         {myBalance <= 0 ? "Est. Refund" : "Est. Balance Owed"}
       </p>
-      <p className={`text-lg sm:text-2xl font-black mt-0.5 ${myBalance <= 0 ? "text-[#173B67]" : "text-[#B83916]"}`}>
+      <p className={`text-lg sm:text-2xl font-black mt-0.5 ${myBalance <= 0 ? "text-[#173B67]" : "text-[#D6577F]"}`}>
         {fmt(Math.abs(myBalance), 0)}
       </p>
-      <p className={`text-[10px] font-semibold ${myBalance <= 0 ? "text-[#58708F]" : "text-[#B83916]/70"}`}>
+      <p className={`text-[10px] font-semibold ${myBalance <= 0 ? "text-[#58708F]" : "text-[#D6577F]/70"}`}>
         vs PCB already paid
       </p>
     </div>
