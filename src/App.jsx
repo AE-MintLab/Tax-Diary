@@ -1795,21 +1795,21 @@ export default function App() {
                                 <div className={`h-full rounded-full transition-all ${isMaxed ? "bg-[#35C99A]" : spent > 0 ? "bg-[#20BFAE]" : "bg-transparent"}`} style={{ width: `${pct}%` }} />
                               </div>
                               {!isMaxed && rem > 0 && (
-                                <div className="flex items-center justify-between text-xs bg-[#E7F8F1]/60 p-2 rounded-xl border border-[#20BFAE]/20 gap-2">
-                                  <span className="text-[11px] text-[#0d9488] font-medium flex items-center gap-1 flex-wrap">
-                                    <Sparkles className="w-3 h-3 text-[#20BFAE]" /> <strong>RM {rem.toLocaleString()}</strong> unclaimed
-                                    {isPro ? (
-                                      <span className="text-[#20BFAE] font-bold">· saves ~RM {estSave.toLocaleString()} tax</span>
-                                    ) : (
-                                      <button onClick={() => openPaywall("Personalized Tax-Savings Estimate", "See exactly how much tax you'd save by maxing out each relief category.")} className="text-gray-400 font-bold flex items-center gap-0.5"><Lock className="w-2.5 h-2.5" /> see RM saved</button>
-                                    )}
-                                  </span>
-                                  {c.isAuto ? (
-                                    <button onClick={() => openSettings("income")} className="text-[11px] font-bold text-[#20BFAE] hover:underline shrink-0">Edit in Profile</button>
-                                  ) : (
-                                    <button onClick={() => { setForm({ ...blank(taxYear), category: c.id }); setShowReceipt(true); }} className="text-[11px] font-bold text-[#20BFAE] hover:underline shrink-0">+ Add Receipt</button>
-                                  )}
-                                </div>
+                                <div className="flex items-center justify-between text-xs bg-[#FFF8D9] p-2 rounded-xl border border-[#F4D96B] gap-2">
+  <span className="text-[11px] text-[#B8860B] font-medium flex items-center gap-1 flex-wrap">
+    <Sparkles className="w-3 h-3 text-[#B8860B]" /> <strong>RM {rem.toLocaleString()}</strong> unclaimed
+    {isPro ? (
+      <span className="text-[#B8860B] font-bold">· saves ~RM {estSave.toLocaleString()} tax</span>
+    ) : (
+      <button onClick={() => openPaywall("Personalized Tax-Savings Estimate", "See exactly how much tax you'd save by maxing out each relief category.")} className="text-gray-400 font-bold flex items-center gap-0.5"><Lock className="w-2.5 h-2.5" /> see RM saved</button>
+    )}
+  </span>
+  {c.isAuto ? (
+    <button onClick={() => openSettings("income")} className="text-[11px] font-bold text-[#B8860B] hover:underline shrink-0">Edit in Profile</button>
+  ) : (
+    <button onClick={() => { setForm({ ...blank(taxYear), category: c.id }); setShowReceipt(true); }} className="text-[11px] font-bold text-[#B8860B] hover:underline shrink-0">+ Add Receipt</button>
+  )}
+</div>
                               )}
                             </div>
                           );
