@@ -1807,7 +1807,7 @@ export default function App() {
   {c.isAuto ? (
     <button onClick={() => openSettings("income")} className="text-[11px] font-bold text-[#B8860B] hover:underline shrink-0">Edit in Profile</button>
   ) : (
-    <button onClick={() => { setForm({ ...blank(taxYear), category: c.id }); setShowReceipt(true); }} className="text-[11px] font-bold text-[#B8860B] hover:underline shrink-0">+ Add Receipt</button>
+    <button onClick={() => { setForm({ ...blank(taxYear), category: c.id }); setShowReceipt(true); }} className="text-[11px] font-bold text-[#D6577F] hover:underline shrink-0">+ Add Receipt</button>
   )}
 </div>
                               )}
