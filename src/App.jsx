@@ -1419,7 +1419,12 @@ export default function App() {
     touchX.current = null;
   };
 
-  if (view === "loading") return <div className="flex items-center justify-center h-screen text-gray-400 text-sm">Loading Tax Diary…</div>;
+  if (view === "loading") return (
+    <div className="fixed inset-0 bg-gradient-to-br from-[#42CFC0] via-[#8EDDB7] to-[#FFF0B5] flex flex-col items-center justify-center gap-4">
+      <img src="/icons/icon-512.png" alt="" className="w-20 h-20 drop-shadow-lg animate-pulse" />
+      <p className="text-sm font-bold text-[#173B67]">Loading Tax Diary…</p>
+    </div>
+  );
 
   if (view === "onboard") {
     const sl = SLIDES[slideIdx];
@@ -1595,7 +1600,7 @@ export default function App() {
 
       {/* Trial / Renewal Countdown Banner */}
       {isTrialing && (
-        <div className="bg-gradient-to-r from-amber-500 to-amber-600 text-white text-center text-xs font-bold py-2 px-4 flex items-center justify-center gap-2">
+        <div className="bg-gradient-to-r from-[#D6577F] to-[#FFC928] text-white text-center text-xs font-bold py-2 px-4 flex items-center justify-center gap-2">
           <Clock className="w-3.5 h-3.5" /> Plus trial: {trialDaysLeft} day{trialDaysLeft !== 1 ? "s" : ""} left
           <button onClick={() => openPaywall("Keep Plus Features", "Subscribe now so you never lose access when your trial ends.")} className="underline ml-1">Subscribe now — RM{PRICE.toFixed(2)}/yr</button>
         </div>
@@ -1633,7 +1638,7 @@ export default function App() {
               <div className="flex items-center gap-2">
                 <img src="/brand/wordmark.png" alt="Tax Diary" className="h-5 w-auto" />
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#E7F8F1] text-[#20BFAE] border border-[#20BFAE]/40">YA {taxYear}</span>
-                {isPro && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-300 flex items-center gap-1"><Crown className="w-3 h-3" /> Plus</span>}
+                {isPro && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#FDEDF2] text-[#D6577F] border border-[#F7A9C4] flex items-center gap-1"><Crown className="w-3 h-3" /> Plus</span>}
               </div>
               <p className="text-[10px] text-gray-400 hidden sm:block">LHDN e-Filing Relief Organizer · Budget {CURRENT_YA} Ready</p>
             </div>
@@ -1645,7 +1650,7 @@ export default function App() {
               </button>
             )}
             {!isPro && (
-              <button onClick={() => openPaywall("Upgrade to Plus", "Unlock AI scanning, 7-year history, Form BE sheet and more.")} className="px-3 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 text-white text-xs font-bold flex items-center gap-1.5 shadow">
+              <button onClick={() => openPaywall("Upgrade to Plus", "Unlock AI scanning, 7-year history, Form BE sheet and more.")} className="px-3 py-2 rounded-xl bg-gradient-to-r from-[#D6577F] to-[#FFC928] text-white text-xs font-bold flex items-center gap-1.5 shadow">
                 <Crown className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Upgrade</span>
               </button>
             )}
@@ -1654,8 +1659,8 @@ export default function App() {
       </header>
 
       {/* Persistent disclaimer — always visible, not tucked into a modal */}
-      <div className="bg-gray-100 border-b border-gray-200 px-4 py-1.5 text-center">
-        <p className="text-[10px] sm:text-[11px] text-gray-500 font-medium">
+      <div className="bg-[#EAF5FD] border-b border-[#A9D8F5]/40 px-4 py-1.5 text-center">
+        <p className="text-[10px] sm:text-[11px] text-[#3E6E8E] font-medium">
           ⚠️ Estimates only, not tax advice — always verify figures with LHDN / MyTax before filing.
         </p>
       </div>
@@ -1678,7 +1683,7 @@ export default function App() {
 
   {/* Mascot — the app icon PNG already has a transparent background,
       so it drops straight into the hero without needing a separate asset. */}
-  <img src="/icons/icon-512.png" alt="" className="absolute right-2 sm:right-6 top-5 sm:top-4 w-32 sm:w-40 pointer-events-none select-none drop-shadow-lg" />
+  <img src="/icons/icon-512.png" alt="" className="absolute right-2 sm:right-6 top-5 sm:top-4 w-32 sm:w-40 z-20 pointer-events-none select-none drop-shadow-lg" />
 
   {/* Header Section — navy carries the weight here; pr- gives the mascot its own
       territory on the right so it never sits on top of the greeting text */}
@@ -1715,12 +1720,12 @@ export default function App() {
 
 
         {taxYear === CURRENT_YA && (
-          <div className={`bg-white p-4 rounded-3xl border shadow-sm space-y-2 ${daysLeft <= 30 ? "border-red-200" : daysLeft <= 90 ? "border-amber-200" : "border-gray-200"}`}>
+          <div className={`bg-white p-4 rounded-3xl border shadow-sm space-y-2 ${daysLeft <= 30 ? "border-red-200" : daysLeft <= 90 ? "border-[#FF9F43]/40" : "border-gray-200"}`}>
             <div className="flex justify-between text-xs font-bold">
               <span className="flex items-center gap-1.5"><Calendar className="w-4 h-4 text-[#20BFAE]" /> YA {CURRENT_YA} Planning Window</span>
-              <span className={daysLeft <= 30 ? "text-red-600" : daysLeft <= 90 ? "text-amber-600" : "text-gray-600"}>{daysLeft > 0 ? `${daysLeft} days to 31 Dec ${CURRENT_YA}` : "Year closed"}</span>
+              <span className={daysLeft <= 30 ? "text-red-600" : daysLeft <= 90 ? "text-[#B15A1E]" : "text-gray-600"}>{daysLeft > 0 ? `${daysLeft} days to 31 Dec ${CURRENT_YA}` : "Year closed"}</span>
             </div>
-            <div className="bg-gray-100 h-2.5 rounded-full overflow-hidden"><div className={`h-full rounded-full ${daysLeft <= 30 ? "bg-red-500" : daysLeft <= 90 ? "bg-amber-400" : "bg-[#20BFAE]"}`} style={{ width: `${yearPct}%` }} /></div>
+            <div className="bg-gray-100 h-2.5 rounded-full overflow-hidden"><div className={`h-full rounded-full ${daysLeft <= 30 ? "bg-red-500" : daysLeft <= 90 ? "bg-[#FF9F43]" : "bg-[#20BFAE]"}`} style={{ width: `${yearPct}%` }} /></div>
             <div className="flex justify-between text-xs text-gray-500">
               <span>{opps.length} relief opportunities unfulfilled</span>
               <span className="font-bold text-[#20BFAE]">RM {opps.reduce((s, c) => s + c.rem, 0).toLocaleString()} available</span>
@@ -1732,9 +1737,9 @@ export default function App() {
 <button 
   onClick={() => { setForm(blank(taxYear)); setEditId(null); setShowReceipt(true); }} 
   className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-[#20BFAE] via-[#70D1A5] to-[#FFD34E] hover:brightness-95 text-white font-black text-sm shadow-md hover:shadow-lg flex items-center justify-center gap-3 active:scale-98 transition duration-200">
-  <span className="flex flex-col gap-1.5 scale-x-[-1]"><span className="block w-3 h-[2.5px] bg-white rounded-full rotate-[18deg]" /><span className="block w-3 h-[2.5px] bg-white rounded-full -rotate-[18deg]" /></span>
-  <Plus className="w-4 h-4 stroke-[3]" /> Add Receipt
   <span className="flex flex-col gap-1.5"><span className="block w-3 h-[2.5px] bg-white rounded-full rotate-[18deg]" /><span className="block w-3 h-[2.5px] bg-white rounded-full -rotate-[18deg]" /></span>
+  <Plus className="w-4 h-4 stroke-[3]" /> Add Receipt
+  <span className="flex flex-col gap-1.5 scale-x-[-1]"><span className="block w-3 h-[2.5px] bg-white rounded-full rotate-[18deg]" /><span className="block w-3 h-[2.5px] bg-white rounded-full -rotate-[18deg]" /></span>
 </button>
   
 
@@ -1895,10 +1900,10 @@ export default function App() {
             </div>
 
             {!isPro && (
-              <div className="bg-gradient-to-br from-amber-500 to-amber-600 rounded-3xl p-5 text-white shadow-md space-y-3">
+              <div className="bg-gradient-to-br from-[#D6577F] to-[#E88BA8] rounded-3xl p-5 text-white shadow-md space-y-3">
                 <div className="flex items-center gap-2 font-bold text-sm"><Crown className="w-4 h-4" /> Try Plus Free for 7 Days</div>
-                <p className="text-xs text-amber-50 leading-relaxed">AI receipt scanning, Audit-Ready Checklist, Form BE copy sheet, tax-savings estimates & multi-device sync.</p>
-                <button onClick={() => { setShowTools(false); openPaywall("Upgrade to Plus", "Unlock AI scanning, 7-year history, Form BE sheet and more.", () => setShowTools(true)); }} className="w-full py-2 bg-white text-orange-600 rounded-xl text-xs font-extrabold">See Plus Features</button>
+                <p className="text-xs text-pink-50 leading-relaxed">AI receipt scanning, Audit-Ready Checklist, Form BE copy sheet, tax-savings estimates & multi-device sync.</p>
+                <button onClick={() => { setShowTools(false); openPaywall("Upgrade to Plus", "Unlock AI scanning, 7-year history, Form BE sheet and more.", () => setShowTools(true)); }} className="w-full py-2 bg-white text-[#D6577F] rounded-xl text-xs font-extrabold">See Plus Features</button>
               </div>
             )}
 
@@ -1914,13 +1919,13 @@ export default function App() {
             {/* Tool launcher grid */}
             <div className="grid grid-cols-2 gap-2">
               <button onClick={() => { setShowTools(false); isPro ? setShowAuditCheck(true) : openPaywall("Audit-Ready Checklist", "A quick self-check so your claims are well-documented before you file.", () => setShowTools(true)); }} className="p-3 rounded-2xl bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-800 font-bold text-xs flex flex-col items-center gap-1.5 text-center">
-                {isPro ? <ShieldCheck className="w-5 h-5 text-[#20BFAE]" /> : <Lock className="w-4 h-4 text-amber-500" />} Checklist
+                {isPro ? <ShieldCheck className="w-5 h-5 text-[#20BFAE]" /> : <Lock className="w-4 h-4 text-[#F7A9C4]" />} Checklist
               </button>
               <button onClick={() => { setShowTools(false); setShowScenario(true); }} className="p-3 rounded-2xl bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-800 font-bold text-xs flex flex-col items-center gap-1.5 text-center">
-                <Briefcase className="w-5 h-5 text-violet-600" /> Other Income
+                <Briefcase className="w-5 h-5 text-[#4A90C2]" /> Other Income
               </button>
               <button onClick={() => { setShowTools(false); isPro ? setShowFormBE(true) : openPaywall("LHDN Form BE Copy Sheet", "Get your relief totals mapped straight to Form BE lines D1–D18, ready to paste into MyTax.", () => setShowTools(true)); }} className="p-3 rounded-2xl bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-800 font-bold text-xs flex flex-col items-center gap-1.5 text-center">
-                {isPro ? <FileText className="w-5 h-5 text-[#20BFAE]" /> : <Lock className="w-4 h-4 text-amber-500" />} Form BE Sheet
+                {isPro ? <FileText className="w-5 h-5 text-[#20BFAE]" /> : <Lock className="w-4 h-4 text-[#F7A9C4]" />} Form BE Sheet
               </button>
               <button onClick={() => { setShowTools(false); setShowSpouseDetail(true); }} className="p-3 rounded-2xl bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-800 font-bold text-xs flex flex-col items-center gap-1.5 text-center">
                 <Heart className="w-5 h-5 text-rose-500" /> Spouse Strategy
@@ -1928,11 +1933,11 @@ export default function App() {
             </div>
 
             {/* Compliance & Vault Years */}
-            <div className="bg-gradient-to-br from-gray-900 to-[#0d9488] rounded-3xl p-5 text-white shadow-md space-y-3">
-              <div className="flex items-center gap-2 text-[#35C99A] font-bold text-xs border-b border-white/10 pb-2"><Archive className="w-4 h-4" /> LHDN 7-Year Vault Compliance</div>
-              <p className="text-xs text-gray-300 leading-relaxed">Section 82A, ITA 1967: retain all receipts for <strong>7 years</strong> after the relevant YA.</p>
-              <button onClick={() => { setShowTools(false); openVault(() => setShowTools(true)); }} className="w-full py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 border border-white/20 transition"><Archive className="w-3.5 h-3.5" /> Manage Vault Years</button>
-              <a href="https://mytax.hasil.gov.my" target="_blank" rel="noreferrer" className="w-full py-2 bg-gradient-to-r from-[#0d9488] to-[#0f766e] hover:brightness-90 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition"><ExternalLink className="w-3.5 h-3.5" /> MyTax Official Portal</a>
+            <div className="bg-[#E7F8F1] border border-[#20BFAE]/20 rounded-3xl p-5 shadow-sm space-y-3">
+              <div className="flex items-center gap-2 text-[#173B67] font-bold text-xs border-b border-[#20BFAE]/20 pb-2"><Archive className="w-4 h-4 text-[#20BFAE]" /> LHDN 7-Year Vault Compliance</div>
+              <p className="text-xs text-[#58708F] leading-relaxed">Section 82A, ITA 1967: retain all receipts for <strong className="text-[#173B67]">7 years</strong> after the relevant YA.</p>
+              <button onClick={() => { setShowTools(false); openVault(() => setShowTools(true)); }} className="w-full py-2 bg-[#20BFAE] hover:brightness-95 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition"><Archive className="w-3.5 h-3.5" /> Manage Vault Years</button>
+              <a href="https://mytax.hasil.gov.my" target="_blank" rel="noreferrer" className="w-full py-2 bg-white border border-[#20BFAE]/40 hover:bg-[#20BFAE]/5 text-[#173B67] rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition"><ExternalLink className="w-3.5 h-3.5 text-[#20BFAE]" /> MyTax Official Portal</a>
             </div>
 
 
@@ -1959,8 +1964,8 @@ export default function App() {
                 <p className="text-xs text-[#20BFAE] font-semibold p-3 bg-gray-50 rounded-xl">✓ All claims have attached receipt images and reasonable claim amounts.</p>
               ) : (
                 auditHealthScore.flags.map((f, i) => (
-                  <div key={i} className={`p-3 rounded-xl border text-xs flex items-start gap-2 ${f.level === "warn" ? "bg-amber-50 border-amber-200 text-amber-800" : "bg-gray-50 border-gray-200 text-gray-700"}`}>
-                    <AlertTriangle className={`w-4 h-4 shrink-0 mt-0.5 ${f.level === "warn" ? "text-amber-600" : "text-gray-400"}`} />
+                  <div key={i} className={`p-3 rounded-xl border text-xs flex items-start gap-2 ${f.level === "warn" ? "bg-[#FFF3E8] border-[#FF9F43]/40 text-[#B15A1E]" : "bg-gray-50 border-gray-200 text-gray-700"}`}>
+                    <AlertTriangle className={`w-4 h-4 shrink-0 mt-0.5 ${f.level === "warn" ? "text-[#FF9F43]" : "text-gray-400"}`} />
                     <span>{f.msg}</span>
                   </div>
                 ))
@@ -1981,7 +1986,7 @@ export default function App() {
                       {r.image ? (
                         <span className="shrink-0 flex items-center gap-1 text-[#20BFAE] font-bold text-[10px]"><CheckCircle2 className="w-3.5 h-3.5" /> Photo</span>
                       ) : (
-                        <span className="shrink-0 flex items-center gap-1 text-amber-700 font-bold text-[10px]"><AlertTriangle className="w-3.5 h-3.5" /> No photo</span>
+                        <span className="shrink-0 flex items-center gap-1 text-[#B15A1E] font-bold text-[10px]"><AlertTriangle className="w-3.5 h-3.5" /> No photo</span>
                       )}
                     </div>
                   ))}
@@ -2000,33 +2005,33 @@ export default function App() {
         <div className="fixed inset-0 z-[70] bg-gray-900/60 backdrop-blur-sm overflow-y-auto p-4" onClick={() => { setShowScenario(false); setShowTools(true); }}>
           <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-4 mx-auto my-8" onClick={(e) => e.stopPropagation()}>
             <div className="flex justify-between items-center border-b border-gray-100 pb-3">
-              <h3 className="font-bold text-base flex items-center gap-2"><Briefcase className="w-5 h-5 text-violet-600" /> Other Income</h3>
+              <h3 className="font-bold text-base flex items-center gap-2"><Briefcase className="w-5 h-5 text-[#4A90C2]" /> Other Income</h3>
               <button onClick={() => { setShowScenario(false); setShowTools(true); }}><X className="w-5 h-5 text-gray-400" /></button>
             </div>
             <p className="text-xs text-gray-500">If you have side business, freelance, or rental income alongside your salary, enter it here so your reliefs, refund, and Spouse tab all reflect your real total income.</p>
 
             <div className="space-y-3">
               <div className="p-4 bg-gray-50 rounded-2xl border border-gray-200 space-y-2">
-                <p className="font-bold text-xs text-gray-800 flex items-center gap-1.5"><DollarSign className="w-4 h-4 text-violet-600" /> Side Business / Freelance (Form B)</p>
+                <p className="font-bold text-xs text-gray-800 flex items-center gap-1.5"><DollarSign className="w-4 h-4 text-[#4A90C2]" /> Side Business / Freelance (Form B)</p>
                 <div className="grid grid-cols-2 gap-2 text-xs">
-                  <div><label className="text-[11px] font-semibold text-gray-600 block mb-1 min-h-[28px] leading-tight">Gross Side Income (RM)</label><input type="number" value={sideHustleInc} onChange={e => setSideHustleInc(e.target.value)} className="w-full p-2.5 rounded-xl border border-gray-200 font-bold outline-none focus:ring-2 focus:ring-violet-400 bg-white" /></div>
-                  <div><label className="text-[11px] font-semibold text-gray-600 block mb-1 min-h-[28px] leading-tight">Claimable Expenses (RM)</label><input type="number" value={sideHustleExp} onChange={e => setSideHustleExp(e.target.value)} className="w-full p-2.5 rounded-xl border border-gray-200 font-bold outline-none focus:ring-2 focus:ring-violet-400 bg-white" /></div>
+                  <div><label className="text-[11px] font-semibold text-gray-600 block mb-1 min-h-[28px] leading-tight">Gross Side Income (RM)</label><input type="number" value={sideHustleInc} onChange={e => setSideHustleInc(e.target.value)} className="w-full p-2.5 rounded-xl border border-gray-200 font-bold outline-none focus:ring-2 focus:ring-[#A9D8F5] bg-white" /></div>
+                  <div><label className="text-[11px] font-semibold text-gray-600 block mb-1 min-h-[28px] leading-tight">Claimable Expenses (RM)</label><input type="number" value={sideHustleExp} onChange={e => setSideHustleExp(e.target.value)} className="w-full p-2.5 rounded-xl border border-gray-200 font-bold outline-none focus:ring-2 focus:ring-[#A9D8F5] bg-white" /></div>
                 </div>
               </div>
 
               <div className="p-4 bg-gray-50 rounded-2xl border border-gray-200 space-y-2">
                 <p className="font-bold text-xs text-gray-800 flex items-center gap-1.5"><Home className="w-4 h-4 text-[#20BFAE]" /> Rental Property Income</p>
                 <div className="grid grid-cols-2 gap-2 text-xs">
-                  <div><label className="text-[11px] font-semibold text-gray-600 block mb-1 min-h-[28px] leading-tight">Rental Collected (RM)</label><input type="number" value={rentalInc} onChange={e => setRentalInc(e.target.value)} className="w-full p-2.5 rounded-xl border border-gray-200 font-bold outline-none focus:ring-2 focus:ring-violet-400 bg-white" /></div>
-                  <div><label className="text-[11px] font-semibold text-gray-600 block mb-1 min-h-[28px] leading-tight">Repairs & Assessment (RM)</label><input type="number" value={rentalExp} onChange={e => setRentalExp(e.target.value)} className="w-full p-2.5 rounded-xl border border-gray-200 font-bold outline-none focus:ring-2 focus:ring-violet-400 bg-white" /></div>
+                  <div><label className="text-[11px] font-semibold text-gray-600 block mb-1 min-h-[28px] leading-tight">Rental Collected (RM)</label><input type="number" value={rentalInc} onChange={e => setRentalInc(e.target.value)} className="w-full p-2.5 rounded-xl border border-gray-200 font-bold outline-none focus:ring-2 focus:ring-[#A9D8F5] bg-white" /></div>
+                  <div><label className="text-[11px] font-semibold text-gray-600 block mb-1 min-h-[28px] leading-tight">Repairs & Assessment (RM)</label><input type="number" value={rentalExp} onChange={e => setRentalExp(e.target.value)} className="w-full p-2.5 rounded-xl border border-gray-200 font-bold outline-none focus:ring-2 focus:ring-[#A9D8F5] bg-white" /></div>
                 </div>
               </div>
 
-              <div className="p-4 bg-violet-50 border border-violet-200 rounded-2xl space-y-2 text-xs text-violet-950">
+              <div className="p-4 bg-[#EAF5FD] border border-[#A9D8F5] rounded-2xl space-y-2 text-xs text-[#1F5C82]">
                 <div className="flex justify-between"><span>Employment Income:</span><span className="font-bold">RM {scenarioCalc.grossEmp.toLocaleString()}</span></div>
-                <div className="flex justify-between"><span>Net Side Business Profit:</span><span className="font-bold text-violet-700">+ RM {scenarioCalc.netSide.toLocaleString()}</span></div>
-                <div className="flex justify-between"><span>Net Taxable Rental Income:</span><span className="font-bold text-violet-700">+ RM {scenarioCalc.netRent.toLocaleString()}</span></div>
-                <div className="border-t border-violet-200 pt-2 flex justify-between font-black text-sm"><span>Combined Taxable Income:</span><span>RM {scenarioCalc.totalTaxable.toLocaleString()}</span></div>
+                <div className="flex justify-between"><span>Net Side Business Profit:</span><span className="font-bold text-[#2E7CB8]">+ RM {scenarioCalc.netSide.toLocaleString()}</span></div>
+                <div className="flex justify-between"><span>Net Taxable Rental Income:</span><span className="font-bold text-[#2E7CB8]">+ RM {scenarioCalc.netRent.toLocaleString()}</span></div>
+                <div className="border-t border-[#A9D8F5] pt-2 flex justify-between font-black text-sm"><span>Combined Taxable Income:</span><span>RM {scenarioCalc.totalTaxable.toLocaleString()}</span></div>
               </div>
 
               {scenarioCalc.isConnected ? (
@@ -2038,7 +2043,7 @@ export default function App() {
               ) : (
                 <div className="p-3.5 bg-gray-50 border border-gray-200 rounded-2xl space-y-2">
                   <p className="text-[11px] text-gray-500">This is a what-if sandbox — it doesn't affect your real numbers until you connect it below.</p>
-                  <button onClick={() => setOtherIncomeAmt(String(scenarioCalc.netOther))} disabled={scenarioCalc.netOther <= 0} className="w-full py-2.5 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-bold text-xs disabled:opacity-40 disabled:cursor-not-allowed">Include RM {scenarioCalc.netOther.toLocaleString()} in My Tax Calculation</button>
+                  <button onClick={() => setOtherIncomeAmt(String(scenarioCalc.netOther))} disabled={scenarioCalc.netOther <= 0} className="w-full py-2.5 rounded-xl bg-[#4A90C2] hover:bg-[#3B7BAA] text-white font-bold text-xs disabled:opacity-40 disabled:cursor-not-allowed">Include RM {scenarioCalc.netOther.toLocaleString()} in My Tax Calculation</button>
                 </div>
               )}
             </div>
@@ -2052,17 +2057,17 @@ export default function App() {
           <div className="bg-white rounded-3xl max-w-md w-full shadow-2xl overflow-hidden mx-auto my-8" onClick={(e) => e.stopPropagation()}>
             <div className="p-6 space-y-4">
               <div className="flex justify-between items-center">
-                <h3 className="font-extrabold text-lg text-gray-900 flex items-center gap-2"><Crown className="w-5 h-5 text-amber-500" /> Upgrade to Plus</h3>
+                <h3 className="font-extrabold text-lg text-gray-900 flex items-center gap-2"><Crown className="w-5 h-5 text-[#D6577F]" /> Upgrade to Plus</h3>
                 <button onClick={closePaywall}><X className="w-5 h-5 text-gray-400" /></button>
               </div>
-              <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl">
-                <p className="text-sm font-bold text-orange-700">Plus Feature: {paywallCtx.title}</p>
-                <p className="text-xs text-orange-600 mt-0.5">{paywallCtx.desc}</p>
+              <div className="p-3 bg-[#FDEDF2] border border-[#F7A9C4] rounded-xl">
+                <p className="text-sm font-bold text-[#D6577F]">Plus Feature: {paywallCtx.title}</p>
+                <p className="text-xs text-[#D6577F] mt-0.5">{paywallCtx.desc}</p>
               </div>
               <div className="bg-gray-900 rounded-2xl p-5 text-white space-y-2">
                 <span className="font-bold text-sm text-gray-200">Plus Subscription</span>
                 <div className="flex items-end gap-2 flex-wrap">
-                  <span className="text-amber-400 font-black text-2xl leading-none">RM {PRICE.toFixed(2)}</span>
+                  <span className="text-[#F7A9C4] font-black text-2xl leading-none">RM {PRICE.toFixed(2)}</span>
                   <span className="text-gray-400 text-xs pb-0.5">/year</span>
                 </div>
                 <div className="space-y-3 text-xs pt-1">
@@ -2085,9 +2090,9 @@ export default function App() {
                     ]}] : []),
                   ].map(({ group, items }) => (
                     <div key={group} className="space-y-1">
-                      <p className="text-[10px] font-black uppercase tracking-wider text-amber-300/90">{group}</p>
+                      <p className="text-[10px] font-black uppercase tracking-wider text-[#F7A9C4]/90">{group}</p>
                       {items.map(f => (
-                        <div key={f} className="flex items-center gap-2 text-gray-200 pl-1"><Check className="w-3.5 h-3.5 text-amber-400 shrink-0" /> {f}</div>
+                        <div key={f} className="flex items-center gap-2 text-gray-200 pl-1"><Check className="w-3.5 h-3.5 text-[#F7A9C4] shrink-0" /> {f}</div>
                       ))}
                     </div>
                   ))}
@@ -2095,11 +2100,11 @@ export default function App() {
               </div>
               {!trialUsed ? (
                 <div className="space-y-2">
-                  <button onClick={startTrial} disabled={paymentLoading} className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-amber-600 to-yellow-500 hover:from-amber-700 hover:to-amber-600 disabled:opacity-50 text-white font-extrabold transition shadow-md">Start 7-Day Free Trial</button>
+                  <button onClick={startTrial} disabled={paymentLoading} className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-[#D6577F] to-[#FFC928] hover:brightness-95 disabled:opacity-50 text-white font-extrabold transition shadow-md">Start 7-Day Free Trial</button>
                   <button onClick={subscribe} disabled={paymentLoading} className="w-full py-2.5 rounded-2xl bg-gray-100 hover:bg-gray-200 disabled:opacity-50 text-gray-700 font-bold text-xs transition">{paymentLoading ? "Redirecting to payment…" : `Skip trial, subscribe now — RM${PRICE.toFixed(2)}/yr`}</button>
                 </div>
               ) : (
-                <button onClick={subscribe} disabled={paymentLoading} className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-amber-600 to-yellow-500 hover:from-amber-700 hover:to-amber-600 disabled:opacity-50 text-white font-extrabold transition shadow-md">{paymentLoading ? "Redirecting to payment…" : `Subscribe to Plus — RM${PRICE.toFixed(2)}/yr`}</button>
+                <button onClick={subscribe} disabled={paymentLoading} className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-[#D6577F] to-[#FFC928] hover:brightness-95 disabled:opacity-50 text-white font-extrabold transition shadow-md">{paymentLoading ? "Redirecting to payment…" : `Subscribe to Plus — RM${PRICE.toFixed(2)}/yr`}</button>
               )}
               {isTrialing ? (
                 <p className="text-center text-[11px] text-gray-400">Your free trial is active for {trialDaysLeft} more day{trialDaysLeft !== 1 ? "s" : ""} — subscribe anytime to keep Plus after it ends.</p>
@@ -2112,9 +2117,9 @@ export default function App() {
                       onChange={(e) => setRedeemInput(e.target.value)}
                       placeholder="Have a code?"
                       autoCapitalize="characters"
-                      className="flex-1 p-2.5 rounded-xl border border-gray-200 text-xs font-semibold outline-none focus:ring-2 focus:ring-violet-400"
+                      className="flex-1 p-2.5 rounded-xl border border-gray-200 text-xs font-semibold outline-none focus:ring-2 focus:ring-[#A9D8F5]"
                     />
-                    <button onClick={redeemCode} disabled={redeemBusy} className="px-4 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white font-bold text-xs">{redeemBusy ? "…" : "Redeem"}</button>
+                    <button onClick={redeemCode} disabled={redeemBusy} className="px-4 py-2.5 rounded-xl bg-[#4A90C2] hover:bg-[#3B7BAA] disabled:opacity-50 text-white font-bold text-xs">{redeemBusy ? "…" : "Redeem"}</button>
                   </div>
                   <button onClick={closePaywall} className="w-full py-2.5 rounded-xl bg-white text-gray-500 font-bold text-xs">Continue with Basic (Free) Plan</button>
                 </>
@@ -2139,9 +2144,9 @@ export default function App() {
               <button onClick={() => { setShowFormBE(false); setShowTools(true); }}><X className="w-5 h-5 text-gray-400 shrink-0" /></button>
             </div>
 
-            <div className="bg-amber-50 border-b border-amber-100 px-5 py-3 flex items-center justify-between gap-3 text-xs text-orange-700">
-              <span className="flex items-center gap-1.5 font-medium"><ShieldAlert className="w-4 h-4 text-orange-600 shrink-0" /> Values are capped to official statutory limits automatically.</span>
-              <a href="https://mytax.hasil.gov.my" target="_blank" rel="noreferrer" className="font-bold text-orange-800 flex items-center gap-1 hover:underline shrink-0">Open MyTax <ExternalLink className="w-3 h-3" /></a>
+            <div className="bg-[#FFF3E8] border-b border-[#FF9F43]/30 px-5 py-3 flex items-center justify-between gap-3 text-xs text-[#B15A1E]">
+              <span className="flex items-center gap-1.5 font-medium"><ShieldAlert className="w-4 h-4 text-[#FF9F43] shrink-0" /> Values are capped to official statutory limits automatically.</span>
+              <a href="https://mytax.hasil.gov.my" target="_blank" rel="noreferrer" className="font-bold text-[#B15A1E] flex items-center gap-1 hover:underline shrink-0">Open MyTax <ExternalLink className="w-3 h-3" /></a>
             </div>
 
             <div className="p-5 space-y-5">
@@ -2205,7 +2210,7 @@ export default function App() {
                     <Download className="w-3.5 h-3.5" /> CSV
                   </button>
                   <button onClick={exportPDF} className="px-3 py-1.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-xs flex items-center gap-1.5">
-                    {isPro ? <FileText className="w-3.5 h-3.5" /> : <Lock className="w-3.5 h-3.5 text-amber-500" />} PDF
+                    {isPro ? <FileText className="w-3.5 h-3.5" /> : <Lock className="w-3.5 h-3.5 text-[#F7A9C4]" />} PDF
                   </button>
                 </div>
               </div>
@@ -2218,7 +2223,7 @@ export default function App() {
                   const locked = y !== CURRENT_YA && !isPro;
                   return (
                     <button key={y} onClick={() => locked ? openPaywall("7-Year Vault Access", "Free plan only covers the current tax year. Upgrade to view and export past years.", () => openVault()) : setTaxYear(y)} className={`shrink-0 p-2 rounded-xl border text-center transition relative min-w-[64px] ${taxYear === y ? "bg-gradient-to-r from-[#20BFAE] to-[#FFC928] text-white border-[#0d9488] font-extrabold" : locked ? "bg-gray-50 text-gray-400 border-gray-200" : "bg-white text-gray-700 border-gray-200 hover:bg-gray-100 font-bold"}`}>
-                      {locked && <Lock className="w-3 h-3 absolute top-1 right-1 text-amber-500" />}
+                      {locked && <Lock className="w-3 h-3 absolute top-1 right-1 text-[#F7A9C4]" />}
                       <span className="block text-[11px]">YA {y}</span>
                       <span className="block text-[9px] opacity-80">{ct} receipts</span>
                     </button>
@@ -2244,7 +2249,7 @@ export default function App() {
                   <p className="text-[11px] text-gray-400">Add receipts or use AI OCR to scan and auto-fill.</p>
                   <div className="flex gap-2 justify-center pt-1">
                     <button onClick={() => { setForm(blank(taxYear)); setShowVault(false); openReceiptModal(() => setShowVault(true)); }} className="px-4 py-2 bg-gradient-to-r from-[#20BFAE] to-[#FFC928] text-white rounded-xl text-xs font-bold inline-flex items-center gap-1"><Plus className="w-3.5 h-3.5" /> Add</button>
-                    <button onClick={() => isPro ? (() => { setShowVault(false); setReceiptReturnTo(() => () => setShowVault(true)); openScan(() => setShowReceipt(true)); })() : (() => { setShowVault(false); openPaywall("AI Receipt Scanner", "Snap a receipt and let AI fill in the details for you.", () => setShowVault(true)); })()} className="px-4 py-2 bg-gray-800 text-white rounded-xl text-xs font-bold inline-flex items-center gap-1">{isPro ? <Zap className="w-3.5 h-3.5 text-[#35C99A]" /> : <Lock className="w-3.5 h-3.5 text-amber-400" />} AI Scan</button>
+                    <button onClick={() => isPro ? (() => { setShowVault(false); setReceiptReturnTo(() => () => setShowVault(true)); openScan(() => setShowReceipt(true)); })() : (() => { setShowVault(false); openPaywall("AI Receipt Scanner", "Snap a receipt and let AI fill in the details for you.", () => setShowVault(true)); })()} className="px-4 py-2 bg-gray-800 text-white rounded-xl text-xs font-bold inline-flex items-center gap-1">{isPro ? <Zap className="w-3.5 h-3.5 text-[#35C99A]" /> : <Lock className="w-3.5 h-3.5 text-[#F7A9C4]" />} AI Scan</button>
                   </div>
                 </div>
               ) : (
@@ -2336,7 +2341,7 @@ export default function App() {
                               <span className="text-[11px] font-semibold text-gray-600">Combined Tax:</span>
                               <span className="font-black text-[#20BFAE] text-sm">RM {spouseAnalysisDetailed.separate.totalTax.toLocaleString()}</span>
                             </div>
-                            <div className={`px-3 py-2 border-t flex justify-between items-center ${(spouseAnalysisDetailed.separate.balanceSelfSep + spouseAnalysisDetailed.separate.balanceSpouseSep) <= 0 ? "bg-[#E7F8F1] border-[#20BFAE]/20" : "bg-amber-50 border-amber-100"}`}>
+                            <div className={`px-3 py-2 border-t flex justify-between items-center ${(spouseAnalysisDetailed.separate.balanceSelfSep + spouseAnalysisDetailed.separate.balanceSpouseSep) <= 0 ? "bg-[#E7F8F1] border-[#20BFAE]/20" : "bg-[#FFF3E8] border-[#FF9F43]/30"}`}>
                               <span className="text-[11px] font-semibold text-gray-600">{(spouseAnalysisDetailed.separate.balanceSelfSep + spouseAnalysisDetailed.separate.balanceSpouseSep) <= 0 ? "Est. Combined Refund:" : "Est. Combined Balance Owed:"}</span>
                               <span className="font-black text-sm">RM {Math.abs(spouseAnalysisDetailed.separate.balanceSelfSep + spouseAnalysisDetailed.separate.balanceSpouseSep).toLocaleString()}</span>
                             </div>
@@ -2357,7 +2362,7 @@ export default function App() {
                               <span className="text-[11px] font-semibold text-gray-600">Joint Tax Payable:</span>
                               <span className="font-black text-[#20BFAE] text-sm">RM {spouseAnalysisDetailed.joint.totalTax.toLocaleString()}</span>
                             </div>
-                            <div className={`px-3 py-2 border-t flex justify-between items-center ${spouseAnalysisDetailed.joint.balanceJoint <= 0 ? "bg-[#E7F8F1] border-[#20BFAE]/20" : "bg-amber-50 border-amber-100"}`}>
+                            <div className={`px-3 py-2 border-t flex justify-between items-center ${spouseAnalysisDetailed.joint.balanceJoint <= 0 ? "bg-[#E7F8F1] border-[#20BFAE]/20" : "bg-[#FFF3E8] border-[#FF9F43]/30"}`}>
                               <span className="text-[11px] font-semibold text-gray-600">{spouseAnalysisDetailed.joint.balanceJoint <= 0 ? "Est. Refund:" : "Est. Balance Owed:"}</span>
                               <span className="font-black text-sm">RM {Math.abs(spouseAnalysisDetailed.joint.balanceJoint).toLocaleString()}</span>
                             </div>
@@ -2442,9 +2447,9 @@ export default function App() {
                   <p className="text-[10px] font-extrabold text-gray-400 uppercase tracking-wider">Annual Income</p>
                   <div><label className="text-xs font-bold text-gray-700 block mb-1">Employment Income — All Employers Combined (RM)</label><input type="number" value={income} onChange={e => setIncome(e.target.value)} placeholder="e.g. 91800" className="w-full p-3 rounded-xl border border-gray-200 font-bold text-sm outline-none focus:ring-2 focus:ring-[#A9D8F5] bg-white" /><p className="text-[10px] text-gray-400 mt-1">If you had more than one job this year, enter the total across all of them</p></div>
                   {parseFloat(otherIncomeAmt) > 0 && (
-                    <div className="flex items-center justify-between p-2.5 bg-violet-50 border border-violet-200 rounded-xl text-xs">
-                      <span className="text-violet-800 font-semibold">+ Side Hustle/Rental Income (connected)</span>
-                      <span className="font-bold text-violet-900">RM {parseFloat(otherIncomeAmt).toLocaleString()}</span>
+                    <div className="flex items-center justify-between p-2.5 bg-[#EAF5FD] border border-[#A9D8F5] rounded-xl text-xs">
+                      <span className="text-[#2E7CB8] font-semibold">+ Side Hustle/Rental Income (connected)</span>
+                      <span className="font-bold text-[#1F5C82]">RM {parseFloat(otherIncomeAmt).toLocaleString()}</span>
                     </div>
                   )}
                   <div><label className="text-xs font-bold text-gray-700 block mb-1">Annual EPF Contribution (RM)</label><input type="number" value={epfAmt} onChange={e => setEpfAmt(e.target.value)} placeholder="e.g. 10098" className="w-full p-3 rounded-xl border border-gray-200 font-bold text-sm outline-none focus:ring-2 focus:ring-[#A9D8F5] bg-white" /><p className="text-[10px] text-gray-400 mt-1">LHDN relief cap: RM 4,000</p></div>
@@ -2500,15 +2505,15 @@ export default function App() {
                   <div className="flex justify-between font-bold"><span>Tax without reliefs:</span><span>{fmt(taxBefore)}</span></div>
                   <div className="flex justify-between font-bold text-[#20BFAE]"><span>Tax payable (with reliefs):</span><span>{fmt(taxAfter)}</span></div>
                   {parseFloat(zakatAmt) > 0 && (
-                    <div className="flex justify-between font-bold text-violet-700"><span>Zakat offset:</span><span>– {fmt(Math.min(parseFloat(zakatAmt) || 0, taxAfter))}</span></div>
+                    <div className="flex justify-between font-bold text-[#2E7CB8]"><span>Zakat offset:</span><span>– {fmt(Math.min(parseFloat(zakatAmt) || 0, taxAfter))}</span></div>
                   )}
                   <div className="p-3 bg-[#E7F8F1] rounded-xl flex justify-between items-center mt-1">
                     <span className="font-extrabold text-xs text-[#0d9488] tracking-wider">YOU'RE SAVING</span>
                     <span className="font-extrabold text-xl text-[#0d9488]">{fmt(taxSaved)}</span>
                   </div>
-                  <div className={`p-3 rounded-xl flex justify-between items-center ${myBalance <= 0 ? "bg-white border border-[#20BFAE]/40" : "bg-amber-50 border border-amber-200"}`}>
-                    <span className={`font-extrabold text-xs tracking-wider ${myBalance <= 0 ? "text-[#20BFAE]" : "text-amber-800"}`}>{myBalance <= 0 ? "ESTIMATED REFUND" : "ESTIMATED BALANCE OWED"}</span>
-                    <span className={`font-extrabold text-xl ${myBalance <= 0 ? "text-[#20BFAE]" : "text-amber-800"}`}>{fmt(Math.abs(myBalance))}</span>
+                  <div className={`p-3 rounded-xl flex justify-between items-center ${myBalance <= 0 ? "bg-white border border-[#20BFAE]/40" : "bg-[#FFF3E8] border border-[#FF9F43]/40"}`}>
+                    <span className={`font-extrabold text-xs tracking-wider ${myBalance <= 0 ? "text-[#20BFAE]" : "text-[#B15A1E]"}`}>{myBalance <= 0 ? "ESTIMATED REFUND" : "ESTIMATED BALANCE OWED"}</span>
+                    <span className={`font-extrabold text-xl ${myBalance <= 0 ? "text-[#20BFAE]" : "text-[#B15A1E]"}`}>{fmt(Math.abs(myBalance))}</span>
                   </div>
                   <p className="text-[10px] text-gray-500">Net tax payable (after zakat) minus PCB already deducted. Effective rate: {effRate}%</p>
                 </div>
@@ -2566,7 +2571,7 @@ export default function App() {
 
                     <div className="border-t border-gray-100 pt-4">
                       <button onClick={() => { setShowSettings(false); setShowSpouseDetail(true); }} className="w-full py-2.5 rounded-xl bg-[#E7F8F1] hover:bg-[#E7F8F1] text-[#20BFAE] font-bold text-xs border border-[#20BFAE]/40 flex items-center justify-center gap-1.5">
-                        <Crown className="w-3.5 h-3.5 text-amber-500" /> See Full Household Comparison
+                        <Crown className="w-3.5 h-3.5 text-[#D6577F]" /> See Full Household Comparison
                       </button>
                     </div>
                   </>
@@ -2581,13 +2586,13 @@ export default function App() {
                 ) : !signedIn ? (
                   <div className="p-4 bg-gray-50 rounded-2xl border border-gray-200 space-y-3">
                     <div className="flex items-center justify-between">
-                      <p className="font-bold text-gray-800 flex items-center gap-1.5"><Mail className="w-4 h-4 text-violet-600" /> {authMode === "signup" ? "Create your account" : "Sign in"}</p>
-                      <button onClick={() => { setAuthMode(m => m === "signup" ? "signin" : "signup"); setAuthError(""); }} className="text-violet-700 font-bold underline">{authMode === "signup" ? "Have an account? Sign in" : "New here? Create account"}</button>
+                      <p className="font-bold text-gray-800 flex items-center gap-1.5"><Mail className="w-4 h-4 text-[#4A90C2]" /> {authMode === "signup" ? "Create your account" : "Sign in"}</p>
+                      <button onClick={() => { setAuthMode(m => m === "signup" ? "signin" : "signup"); setAuthError(""); }} className="text-[#2E7CB8] font-bold underline">{authMode === "signup" ? "Have an account? Sign in" : "New here? Create account"}</button>
                     </div>
                     <p className="text-[11px] text-gray-500">An account is needed to subscribe to Plus (so payment is tied to you) and to sync your data across devices.</p>
-                    <input type="email" value={vaultEmail} onChange={e => setVaultEmail(e.target.value)} placeholder="you@email.com" autoCapitalize="off" autoCorrect="off" className="w-full p-2.5 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-violet-400" />
+                    <input type="email" value={vaultEmail} onChange={e => setVaultEmail(e.target.value)} placeholder="you@email.com" autoCapitalize="off" autoCorrect="off" className="w-full p-2.5 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-[#A9D8F5]" />
                     <div className="relative">
-                      <input type={showAuthPassword ? "text" : "password"} value={authPassword} onChange={e => setAuthPassword(e.target.value)} placeholder="Password (min. 6 characters)" className="w-full p-2.5 pr-10 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-violet-400" />
+                      <input type={showAuthPassword ? "text" : "password"} value={authPassword} onChange={e => setAuthPassword(e.target.value)} placeholder="Password (min. 6 characters)" className="w-full p-2.5 pr-10 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-[#A9D8F5]" />
                       <button type="button" onClick={() => setShowAuthPassword(v => !v)} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400">{showAuthPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}</button>
                     </div>
                     {authError && <p className="text-rose-600 font-semibold bg-rose-50 border border-rose-200 rounded-xl p-2.5">{authError}</p>}
@@ -2595,22 +2600,22 @@ export default function App() {
                       <LogIn className="w-3.5 h-3.5" /> {authBusy ? "Please wait…" : authMode === "signup" ? "Create Account" : "Sign In"}
                     </button>
                     {authMode === "signin" && (
-                      <button onClick={doPasswordReset} disabled={authBusy} className="w-full text-center text-violet-700 font-semibold underline">Forgot password?</button>
+                      <button onClick={doPasswordReset} disabled={authBusy} className="w-full text-center text-[#2E7CB8] font-semibold underline">Forgot password?</button>
                     )}
                   </div>
                 ) : (
                   <div className="space-y-3">
                     <div className="p-4 bg-gray-50 rounded-2xl border border-gray-200 flex items-center justify-between">
-                      <p className="font-bold text-gray-800 flex items-center gap-1.5"><Mail className="w-4 h-4 text-violet-600" /> Signed in</p>
+                      <p className="font-bold text-gray-800 flex items-center gap-1.5"><Mail className="w-4 h-4 text-[#4A90C2]" /> Signed in</p>
                       <span className="text-[10px] bg-gray-200 text-gray-700 px-2 py-0.5 rounded font-bold truncate max-w-[140px]">{vaultEmail}</span>
                     </div>
 
                     {!isPro ? (
-                      <div className="p-5 bg-amber-50 border border-amber-200 rounded-2xl text-center space-y-3">
-                        <Lock className="w-6 h-6 text-amber-500 mx-auto" />
-                        <p className="font-bold text-orange-700">Multi-Device Sync is a Plus feature</p>
-                        <p className="text-[11px] text-orange-600">Snap receipts on your phone, then pick up the exact same vault on your laptop at e-Filing time.</p>
-                        <button onClick={() => { setShowSettings(false); openPaywall("Multi-Device Cloud Sync", "Your account's ready — subscribe to enable syncing.", () => openSettings("sync")); }} className="w-full py-2.5 rounded-xl bg-amber-500 hover:bg-gradient-to-r from-amber-600 to-yellow-500 text-white font-bold">Unlock Device Sync</button>
+                      <div className="p-5 bg-[#FDEDF2] border border-[#F7A9C4] rounded-2xl text-center space-y-3">
+                        <Lock className="w-6 h-6 text-[#D6577F] mx-auto" />
+                        <p className="font-bold text-[#D6577F]">Multi-Device Sync is a Plus feature</p>
+                        <p className="text-[11px] text-[#D6577F]">Snap receipts on your phone, then pick up the exact same vault on your laptop at e-Filing time.</p>
+                        <button onClick={() => { setShowSettings(false); openPaywall("Multi-Device Cloud Sync", "Your account's ready — subscribe to enable syncing.", () => openSettings("sync")); }} className="w-full py-2.5 rounded-xl bg-[#D6577F] hover:brightness-95 text-white font-bold">Unlock Device Sync</button>
                       </div>
                     ) : (
                       <div className="p-4 bg-[#E7F8F1] rounded-2xl border border-[#20BFAE]/40 space-y-3">
@@ -2681,7 +2686,7 @@ export default function App() {
                 onClick={() => isPro ? (() => { setShowReceipt(false); openScan(() => setShowReceipt(true)); })() : (() => { setShowReceipt(false); openPaywall("AI Receipt Scanner", "Snap a receipt and let AI fill in merchant, amount, date and category for you.", () => setShowReceipt(true)); })()}
                 className="w-full py-2.5 rounded-xl bg-gray-50 hover:bg-gray-100 border border-dashed border-gray-300 text-gray-700 font-bold text-xs flex items-center justify-center gap-2 transition"
               >
-                {isPro ? <Zap className="w-4 h-4 text-[#20BFAE]" /> : <Lock className="w-3.5 h-3.5 text-amber-500" />} Scan with AI instead {!isPro && <Crown className="w-3 h-3 text-amber-500" />}
+                {isPro ? <Zap className="w-4 h-4 text-[#20BFAE]" /> : <Lock className="w-3.5 h-3.5 text-[#F7A9C4]" />} Scan with AI instead {!isPro && <Crown className="w-3 h-3 text-[#F7A9C4]" />}
               </button>
             )}
             <div className="space-y-3 text-xs">
@@ -2703,7 +2708,7 @@ export default function App() {
               </div>
               {hasSpouse && isPro && (
                 <div>
-                  <label className="font-bold text-gray-700 block mb-1 flex items-center gap-1"><Crown className="w-3 h-3 text-amber-500" /> Whose claim is this?</label>
+                  <label className="font-bold text-gray-700 block mb-1 flex items-center gap-1"><Crown className="w-3 h-3 text-[#F7A9C4]" /> Whose claim is this?</label>
                   <div className="grid grid-cols-3 gap-2">
                     {[["mine", "Mine"], ["spouse", "Spouse"], ["joint", "Joint"]].map(([v, l]) => (
                       <button key={v} type="button" onClick={() => setForm(f => ({ ...f, owner: v }))} className={`py-2 rounded-xl border font-bold text-[11px] ${form.owner === v ? "bg-rose-50 border-rose-300 text-rose-700" : "bg-white border-gray-200 text-gray-500"}`}>{l}</button>
