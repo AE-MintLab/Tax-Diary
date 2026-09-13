@@ -1568,7 +1568,16 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-100 via-slate-50 to-gray-100 font-sans flex flex-col">
+    <div className="relative min-h-screen bg-[#FAFAF7] font-sans flex flex-col">
+      {/* Decorative Tax Diary background — large, extremely subtle, mostly off-screen.
+          Keeps the canvas near-white while these barely-there pastel blobs peek in
+          from the edges, so the app reads "cheerful" without being visually busy. */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none -z-10">
+        <div className="absolute -left-24 top-[55%] w-64 h-64 rounded-full bg-[#FFC928]/12 blur-sm" />
+        <div className="absolute -right-28 top-[68%] w-72 h-72 rounded-full bg-[#A9D8F5]/20 blur-sm" />
+        <div className="absolute right-[-30px] top-[30%] w-24 h-24 rounded-full bg-[#FF9F43]/10 blur-xl" />
+      </div>
+
       {toast && (
         <div className="fixed bottom-5 right-5 z-[100] bg-gray-900 text-white px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-2 text-xs font-semibold animate-bounce">
           <CheckCircle2 className="w-4 h-4 text-[#35C99A]" />{toast}
@@ -1662,41 +1671,43 @@ export default function App() {
   </div>
 )}
 
-{/* Hero Banner — Teal + Sunshine Yellow, softened gradient + mascot (locked palette v2.1) */}
-<div className="bg-gradient-to-br from-[#20BFAE] via-[#8FDDB0] to-[#FFEAA8] rounded-3xl p-5 sm:p-6 shadow-xl relative overflow-hidden space-y-4">
-  <div className="absolute -top-10 -right-10 w-32 h-32 bg-white/20 rounded-full blur-2xl pointer-events-none" />
-  <div className="absolute -bottom-14 -left-10 w-40 h-40 bg-[#FF9F43]/15 rounded-full blur-2xl pointer-events-none" />
+{/* Hero Banner — Fresh Teal + Mint + Sunshine, with mascot (locked palette v2.2) */}
+<div className="bg-gradient-to-br from-[#42CFC0] via-[#8EDDB7] to-[#FFF0B5] rounded-3xl p-5 sm:p-6 shadow-xl relative overflow-hidden space-y-4">
+  <div className="absolute -top-16 -right-16 w-44 h-44 bg-white/25 rounded-full blur-3xl pointer-events-none" />
+  <div className="absolute -bottom-20 -left-16 w-48 h-48 bg-[#FFC928]/20 rounded-full blur-3xl pointer-events-none" />
 
-  {/* Header Section — navy carries the weight here, mascot gives it personality */}
-  <div className="border-b border-[#173B67]/15 pb-4 relative flex items-center justify-between gap-3">
-    <div>
-      <h1 className="text-xl sm:text-2xl font-black tracking-tight text-[#173B67]">Salam{clientName ? `, ${clientName}` : ""} 👋</h1>
-      <p className="text-xs text-[#173B67]/70 font-semibold">Track YA {taxYear} reliefs · Log receipts · Maximize your refund before 31 Dec {taxYear}</p>
-    </div>
-    <img src="/icons/icon-512.png" alt="" className="w-14 h-14 sm:w-16 sm:h-16 object-contain shrink-0 drop-shadow-md" />
+  {/* Mascot — the app icon PNG already has a transparent background,
+      so it drops straight into the hero without needing a separate asset. */}
+  <img src="/icons/icon-512.png" alt="" className="absolute right-2 sm:right-6 top-5 sm:top-4 w-32 sm:w-40 pointer-events-none select-none drop-shadow-lg" />
+
+  {/* Header Section — navy carries the weight here; pr- gives the mascot its own
+      territory on the right so it never sits on top of the greeting text */}
+  <div className="border-b border-[#173B67]/15 pb-4 relative z-10 pr-24 sm:pr-36">
+    <h1 className="text-xl sm:text-2xl font-black tracking-tight text-[#173B67]">Salam{clientName ? `, ${clientName}` : ""} 👋</h1>
+    <p className="text-xs text-[#173B67]/70 font-semibold leading-relaxed mt-1">Track YA {taxYear} reliefs · Log receipts · Maximize your refund before 31 Dec {taxYear}</p>
   </div>
 
   {/* Inner Dashboard Cards Grid — white cards so the teal numbers pop,
       uniform treatment regardless of refund/owed */}
-  <div className="grid grid-cols-2 gap-3 relative">
+  <div className="grid grid-cols-2 gap-3 relative z-10">
     {/* Left Card: Est. Refund / Balance Owed */}
-    <div className="bg-white/95 p-3 rounded-2xl">
+    <div className="bg-white/90 p-3 rounded-2xl shadow-sm">
       <p className="text-[10px] font-black uppercase tracking-wider text-[#20BFAE]">
         {myBalance <= 0 ? "Est. Refund" : "Est. Balance Owed"}
       </p>
       <p className="text-lg sm:text-2xl font-black mt-0.5 text-[#173B67]">
         {fmt(Math.abs(myBalance), 0)}
       </p>
-      <p className="text-[10px] font-semibold opacity-80 text-[#58708F]">
+      <p className="text-[10px] font-semibold text-[#58708F]">
         vs PCB already paid
       </p>
     </div>
 
     {/* Right Card: Total Reliefs Claimed */}
-    <div className="bg-white/95 p-3 rounded-2xl">
+    <div className="bg-white/90 p-3 rounded-2xl shadow-sm">
       <p className="text-[10px] font-black uppercase tracking-wider text-[#20BFAE]">Total Reliefs Claimed</p>
       <p className="text-lg sm:text-2xl font-black mt-0.5 text-[#173B67]">RM {totalReliefs.toLocaleString()}</p>
-      <p className="text-[10px] font-semibold opacity-80 text-[#58708F]">Chargeable income: RM {chargeable.toLocaleString()}</p>
+      <p className="text-[10px] font-semibold text-[#58708F]">Chargeable income: RM {chargeable.toLocaleString()}</p>
     </div>
   </div>
 </div>
@@ -1720,8 +1731,10 @@ export default function App() {
         {/* Quick Actions */}
 <button 
   onClick={() => { setForm(blank(taxYear)); setEditId(null); setShowReceipt(true); }} 
-  className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-[#20BFAE] to-[#FFC928] hover:brightness-95 text-white font-black text-sm shadow-md hover:shadow-lg flex items-center justify-center gap-2 active:scale-98 transition duration-200">
+  className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-[#20BFAE] via-[#70D1A5] to-[#FFD34E] hover:brightness-95 text-white font-black text-sm shadow-md hover:shadow-lg flex items-center justify-center gap-3 active:scale-98 transition duration-200">
+  <span className="flex flex-col gap-1.5 scale-x-[-1]"><span className="block w-3 h-[2.5px] bg-white rounded-full rotate-[18deg]" /><span className="block w-3 h-[2.5px] bg-white rounded-full -rotate-[18deg]" /></span>
   <Plus className="w-4 h-4 stroke-[3]" /> Add Receipt
+  <span className="flex flex-col gap-1.5"><span className="block w-3 h-[2.5px] bg-white rounded-full rotate-[18deg]" /><span className="block w-3 h-[2.5px] bg-white rounded-full -rotate-[18deg]" /></span>
 </button>
   
 
