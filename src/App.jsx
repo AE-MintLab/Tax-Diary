@@ -1702,10 +1702,10 @@ export default function App() {
       <p className={`text-[10px] font-black uppercase tracking-wider ${myBalance <= 0 ? "text-[#20BFAE]" : "text-[#FF9F43]"}`}>
         {myBalance <= 0 ? "Est. Refund" : "Est. Balance Owed"}
       </p>
-      <p className={`text-lg sm:text-2xl font-black mt-0.5 ${myBalance <= 0 ? "text-[#173B67]" : "text-[#C96A18]"}`}>
+      <p className={`text-lg sm:text-2xl font-black mt-0.5 ${myBalance <= 0 ? "text-[#173B67]" : "text-[#B83916]"}`}>
         {fmt(Math.abs(myBalance), 0)}
       </p>
-      <p className={`text-[10px] font-semibold ${myBalance <= 0 ? "text-[#58708F]" : "text-[#C96A18]/70"}`}>
+      <p className={`text-[10px] font-semibold ${myBalance <= 0 ? "text-[#58708F]" : "text-[#B83916]/70"}`}>
         vs PCB already paid
       </p>
     </div>
