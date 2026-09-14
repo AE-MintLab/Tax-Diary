@@ -1645,7 +1645,7 @@ export default function App() {
       )}
 
       {/* Trial / Renewal Countdown Banner */}
-      {isTrialing && (
+      {isTrialing && !isSubscribed && (
         <div className="bg-gradient-to-r from-[#D6577F] to-[#FFC928] text-white text-center text-xs font-bold py-2 px-4 flex items-center justify-center gap-2">
           <Clock className="w-3.5 h-3.5" /> Plus trial: {trialDaysLeft} day{trialDaysLeft !== 1 ? "s" : ""} left
           <button onClick={() => openPaywall("Keep Plus Features", "Subscribe now so you never lose access when your trial ends.")} className="underline ml-1">Subscribe now — RM{PRICE.toFixed(2)}/yr</button>
@@ -1653,8 +1653,16 @@ export default function App() {
       )}
       {showRenewalBanner && (
         <div className="bg-gradient-to-r from-slate-800 to-slate-900 text-white text-center text-xs font-bold py-2 px-4 flex items-center justify-center gap-2">
-          <RefreshCw className="w-3.5 h-3.5" /> Plus renews in {daysToRenewal} day{daysToRenewal !== 1 ? "s" : ""}
-          <button onClick={() => openPaywall("Renew Plus", "Renew your subscription to keep your Plus features active.")} className="underline ml-1">Renew now — RM{PRICE.toFixed(2)}/yr</button>
+          <RefreshCw className="w-3.5 h-3.5" />
+          {cloudBilling?.lastRedeemedCode ? (
+            <>Plus access ends in {daysToRenewal} day{daysToRenewal !== 1 ? "s" : ""}
+              <button onClick={() => openPaywall("Keep Plus Features", "Your redeemed code is about to expire — subscribe to keep your Plus features active.")} className="underline ml-1">Subscribe — RM{PRICE.toFixed(2)}/yr</button>
+            </>
+          ) : (
+            <>Plus renews in {daysToRenewal} day{daysToRenewal !== 1 ? "s" : ""}
+              <button onClick={() => openPaywall("Renew Plus", "Renew your subscription to keep your Plus features active.")} className="underline ml-1">Renew now — RM{PRICE.toFixed(2)}/yr</button>
+            </>
+          )}
         </div>
       )}
 
