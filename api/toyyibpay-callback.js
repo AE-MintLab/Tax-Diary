@@ -60,7 +60,7 @@ export default async function handler(req, res) {
       const subEnd = base + YEAR_MS;
 
       await billingRef.set(
-        { subEnd, lastPaymentAt: now, lastBillCode: billcode, lastAmount: amount },
+        { subEnd, lastPaymentAt: now, lastBillCode: billcode, lastAmount: amount, lastRedeemedCode: null },
         { merge: true }
       );
 
