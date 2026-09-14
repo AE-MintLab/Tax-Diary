@@ -1430,31 +1430,77 @@ export default function App() {
     const sl = SLIDES[slideIdx];
     return (
       <div className={`fixed inset-0 bg-gradient-to-br ${sl.bg} flex flex-col justify-between overflow-hidden select-none`} onTouchStart={onTS} onTouchEnd={onTE}>
-        <div className="flex justify-between items-center p-6 z-10">
-          <div className="flex items-center gap-2">
-            <img src="/icons/icon-512.png" alt="Tax Diary" className="w-9 h-9 rounded-xl object-contain bg-white/90 p-0.5" />
-            <img src="/brand/wordmark.png" alt="Tax Diary" className="h-6 w-auto" />
-          </div>
-          <button onClick={doneOnboard} className="text-gray-300 text-xs font-bold px-3 py-1.5 rounded-full bg-white/10 border border-white/20">Skip</button>
-        </div>
-        <div className="flex-1 flex items-center justify-center p-8">
-          <div className="text-center space-y-4">
-            <div className="text-5xl">{sl.badge.slice(0, 2)}</div>
-            <p className="text-[#35C99A] text-xs font-bold tracking-widest uppercase">{sl.badge.slice(3)}</p>
-            <h1 className="text-4xl font-black text-white leading-tight whitespace-pre-line">{sl.headline}</h1>
-            <p className="text-gray-300 text-sm leading-relaxed max-w-xs mx-auto">{sl.body}</p>
-            <p className="text-[#35C99A] text-xs font-bold pt-1">{sl.tagline}</p>
-          </div>
-        </div>
-        <div className="p-8 space-y-6">
-          <div className="flex items-center justify-between">
-            <div className="flex gap-2">{SLIDES.map((_, i) => (<button key={i} onClick={() => setSlideIdx(i)} className={`rounded-full transition-all ${slideIdx === i ? "w-8 h-2.5 bg-[#FFC928]" : "w-2.5 h-2.5 bg-white/30"}`} />))}</div>
-            <button onClick={() => slideIdx < SLIDES.length - 1 ? setSlideIdx(p => p + 1) : doneOnboard()} className="w-14 h-14 rounded-full bg-white text-gray-950 font-bold flex items-center justify-center shadow-xl hover:bg-[#FFC928] transition active:scale-95">
-              <ArrowRight className="w-6 h-6 stroke-[2.5]" />
-            </button>
-          </div>
-        </div>
+
+  <div className="flex justify-between items-center p-6 z-10">
+    <div className="flex items-center gap-2">
+      <img src="/icons/icon-512.png" alt="Tax Diary" className="w-9 h-9 rounded-xl object-contain bg-white/90 p-0.5" />
+      <img src="/brand/wordmark.png" alt="Tax Diary" className="h-6 w-auto" />
+    </div>
+
+    <button
+      onClick={doneOnboard}
+      className="text-[#173B67] text-xs font-bold px-3 py-1.5 rounded-full bg-white/60 border border-white/70"
+    >
+      Skip
+    </button>
+  </div>
+
+  <div className="flex-1 flex items-center justify-center p-8">
+    <div className="text-center space-y-4">
+
+      <div className="text-5xl">{sl.badge.slice(0, 2)}</div>
+
+      <p className="text-[#173B67] text-xs font-bold tracking-widest uppercase">
+        {sl.badge.slice(3)}
+      </p>
+
+      <h1 className="text-4xl font-black text-[#173B67] leading-tight whitespace-pre-line">
+        {sl.headline}
+      </h1>
+
+      <p className="text-[#173B67]/75 text-sm leading-relaxed max-w-xs mx-auto">
+        {sl.body}
+      </p>
+
+      <p className="text-[#FF9F43] text-xs font-bold pt-1">
+        {sl.tagline}
+      </p>
+
+    </div>
+  </div>
+
+  <div className="p-8 space-y-6">
+    <div className="flex items-center justify-between">
+
+      <div className="flex gap-2">
+        {SLIDES.map((_, i) => (
+          <button
+            key={i}
+            onClick={() => setSlideIdx(i)}
+            className={`rounded-full transition-all ${
+              slideIdx === i
+                ? "w-8 h-2.5 bg-[#FFC928]"
+                : "w-2.5 h-2.5 bg-[#173B67]/20"
+            }`}
+          />
+        ))}
       </div>
+
+      <button
+        onClick={() =>
+          slideIdx < SLIDES.length - 1
+            ? setSlideIdx(p => p + 1)
+            : doneOnboard()
+        }
+        className="w-14 h-14 rounded-full bg-white text-[#173B67] font-bold flex items-center justify-center shadow-xl hover:bg-[#FFC928] transition active:scale-95"
+      >
+        <ArrowRight className="w-6 h-6 stroke-[2.5]" />
+      </button>
+
+    </div>
+  </div>
+
+</div>
     );
   }
 
