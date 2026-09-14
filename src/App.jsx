@@ -1102,7 +1102,7 @@ export default function App() {
       const sp = getSpent(c.id);
       const lim = getCatLimit(c);
       if (sp === lim && sp > 0) {
-        flags.push({ level: "info", msg: `${c.name} is claimed at exactly 100% cap (RM ${lim.toLocaleString()}). Ensure full proof is attached.` });
+        flags.push({ level: "info", msg: `${c.name} is claimed at exactly 100% cap (RM ${lim.toLocaleString(undefined, { maximumFractionDigits: 0 })}). Ensure full proof is attached.` });
       }
     });
     return { score: Math.max(score, 40), flags: flags.slice(0, 6) };
@@ -1183,13 +1183,13 @@ export default function App() {
       reasoning = `Your spouse has no income this year, so Joint Assessment grants a RM4,000 Spouse Relief on top of your own reliefs.`;
     } else if (totalTaxSeparate < totalTaxJoint) {
       recommended = "SEPARATE";
-      reasoning = `Separate Assessment saves RM ${savings.toLocaleString()}. Each of you keeps your own RM9,000 self-relief and starts fresh at the bottom of the progressive tax brackets.`;
+      reasoning = `Separate Assessment saves RM ${savings.toLocaleString(undefined, { maximumFractionDigits: 0 })}. Each of you keeps your own RM9,000 self-relief and starts fresh at the bottom of the progressive tax brackets.`;
     } else if (totalTaxJoint < totalTaxSeparate) {
       recommended = "JOINT";
-      reasoning = `Joint Assessment saves RM ${savings.toLocaleString()} for your household this year.`;
+      reasoning = `Joint Assessment saves RM ${savings.toLocaleString(undefined, { maximumFractionDigits: 0 })} for your household this year.`;
     } else {
       recommended = "EITHER";
-      reasoning = `Both options result in the same tax liability of RM ${totalTaxSeparate.toLocaleString()}.`;
+      reasoning = `Both options result in the same tax liability of RM ${totalTaxSeparate.toLocaleString(undefined, { maximumFractionDigits: 0 })}.`;
     }
 
     return {
@@ -1216,7 +1216,7 @@ export default function App() {
     const { rem } = getStats(form.category);
     const orig = editId ? (receipts.find(r => r.id === editId)?.amount || 0) : 0;
     const max = rem + orig, num = parseFloat(val) || 0;
-    if (max > 0 && num > max) { setForm(f => ({ ...f, amount: String(max) })); showToast(`Auto-capped to RM ${max.toLocaleString()}`); }
+    if (max > 0 && num > max) { setForm(f => ({ ...f, amount: String(max) })); showToast(`Auto-capped to RM ${max.toLocaleString(undefined, { maximumFractionDigits: 0 })}`); }
     else setForm(f => ({ ...f, amount: val }));
   };
 
@@ -1767,8 +1767,8 @@ export default function App() {
     {/* Right Card: Total Reliefs Claimed */}
     <div className="bg-white/90 p-3 rounded-2xl shadow-sm">
       <p className="text-[10px] font-black uppercase tracking-wider text-[#20BFAE]">Total Reliefs Claimed</p>
-      <p className="text-lg sm:text-2xl font-black mt-0.5 text-[#173B67]">RM {totalReliefs.toLocaleString()}</p>
-      <p className="text-[10px] font-semibold text-[#58708F]">Chargeable income: RM {chargeable.toLocaleString()}</p>
+      <p className="text-lg sm:text-2xl font-black mt-0.5 text-[#173B67]">RM {totalReliefs.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
+      <p className="text-[10px] font-semibold text-[#58708F]">Chargeable income: RM {chargeable.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
     </div>
   </div>
 </div>
@@ -1784,7 +1784,7 @@ export default function App() {
             <div className="bg-gray-100 h-2.5 rounded-full overflow-hidden"><div className={`h-full rounded-full ${daysLeft <= 30 ? "bg-red-500" : daysLeft <= 90 ? "bg-[#FF9F43]" : "bg-[#20BFAE]"}`} style={{ width: `${yearPct}%` }} /></div>
             <div className="flex justify-between text-xs text-gray-500">
               <span>{opps.length} relief opportunities unfulfilled</span>
-              <span className="font-bold text-[#20BFAE]">RM {opps.reduce((s, c) => s + c.rem, 0).toLocaleString()} available</span>
+              <span className="font-bold text-[#20BFAE]">RM {opps.reduce((s, c) => s + c.rem, 0).toLocaleString(undefined, { maximumFractionDigits: 0 })} available</span>
             </div>
           </div>
         )}
@@ -1820,10 +1820,10 @@ export default function App() {
                     <button onClick={() => setExpanded(p => ({ ...p, [g]: !p[g] }))} className="w-full p-4 flex items-center justify-between bg-gray-50/80 hover:bg-gray-100 transition border-b border-gray-100">
                       <div className="flex items-center gap-2">
                         <span className="font-extrabold text-sm text-[#173B67]">{g} Reliefs</span>
-                        {gS > 0 && <span className="text-xs px-2.5 py-0.5 rounded-full bg-[#E7F8F1] text-[#20BFAE] font-extrabold border border-[#20BFAE]/40">RM {gS.toLocaleString()}</span>}
+                        {gS > 0 && <span className="text-xs px-2.5 py-0.5 rounded-full bg-[#E7F8F1] text-[#20BFAE] font-extrabold border border-[#20BFAE]/40">RM {gS.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>}
                       </div>
                       <div className="flex items-center gap-2 text-xs text-gray-400">
-                        <span>Max RM {gL.toLocaleString()}</span>
+                        <span>Max RM {gL.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
                         {expanded[g] ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                       </div>
                     </button>
@@ -1841,8 +1841,8 @@ export default function App() {
                                   <p className="text-xs text-gray-400">{c.note}</p>
                                 </div>
                                 <div className="text-right text-xs">
-                                  {spent > 0 ? <p className="font-extrabold text-[#20BFAE]">RM {spent.toLocaleString()}</p> : <p className="text-gray-400 font-medium">RM 0.00</p>}
-                                  {isMaxed ? <span className="text-[#20BFAE] font-bold text-[10px] flex items-center gap-0.5 justify-end mt-0.5"><CheckCircle2 className="w-3 h-3" /> Maxed</span> : <span className="text-gray-400 text-[10px]">RM {rem.toLocaleString()} remaining</span>}
+                                  {spent > 0 ? <p className="font-extrabold text-[#20BFAE]">RM {spent.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p> : <p className="text-gray-400 font-medium">RM 0.00</p>}
+                                  {isMaxed ? <span className="text-[#20BFAE] font-bold text-[10px] flex items-center gap-0.5 justify-end mt-0.5"><CheckCircle2 className="w-3 h-3" /> Maxed</span> : <span className="text-gray-400 text-[10px]">RM {rem.toLocaleString(undefined, { maximumFractionDigits: 0 })} remaining</span>}
                                 </div>
                               </div>
                               <div className="bg-gray-100 h-2 rounded-full overflow-hidden">
@@ -1851,9 +1851,9 @@ export default function App() {
                               {!isMaxed && rem > 0 && (
                                 <div className="flex items-center justify-between text-xs bg-[#FFF8D9] p-2 rounded-xl border border-[#F4D96B] gap-2">
                                   <span className="text-[11px] text-[#B8860B] font-medium flex items-center gap-1 flex-wrap">
-                                    <Sparkles className="w-3 h-3 text-[#B8860B]" /> <strong>RM {rem.toLocaleString()}</strong> unclaimed
+                                    <Sparkles className="w-3 h-3 text-[#B8860B]" /> <strong>RM {rem.toLocaleString(undefined, { maximumFractionDigits: 0 })}</strong> unclaimed
                                     {isPro ? (
-                                      <span className="text-[#B8860B] font-bold">· saves ~RM {estSave.toLocaleString()} tax</span>
+                                      <span className="text-[#B8860B] font-bold">· saves ~RM {estSave.toLocaleString(undefined, { maximumFractionDigits: 0 })} tax</span>
                                     ) : (
                                       <button onClick={() => openPaywall("Personalized Tax-Savings Estimate", "See exactly how much tax you'd save by maxing out each relief category.")} className="text-gray-400 font-bold flex items-center gap-0.5"><Lock className="w-2.5 h-2.5" /> see RM saved</button>
                                     )}
@@ -1892,7 +1892,7 @@ export default function App() {
                     <div key={c.id} className="p-3 rounded-2xl bg-gray-50 border border-gray-100 hover:border-[#F4D96B] transition space-y-1.5">
                       <div className="flex justify-between items-start text-xs">
                         <span className="font-bold text-gray-800">{c.emoji} {c.name}</span>
-                        <span className="font-extrabold text-[#B8860B]">RM {c.rem.toLocaleString()}</span>
+                        <span className="font-extrabold text-[#B8860B]">RM {c.rem.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
                       </div>
                       <p className="text-[11px] text-gray-500">{c.note}</p>
                       {c.isAuto ? (
@@ -2037,7 +2037,7 @@ export default function App() {
                     <div key={r.id} className="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-gray-50 border border-gray-100 text-xs">
                       <div className="min-w-0 flex-1">
                         <p className="font-bold text-gray-800 truncate">{r.merchant || getCat(r.category)?.name || "Receipt"}</p>
-                        <p className="text-[10px] text-gray-400">{getCat(r.category)?.name || r.category} · RM {r.amount.toLocaleString()}</p>
+                        <p className="text-[10px] text-gray-400">{getCat(r.category)?.name || r.category} · RM {r.amount.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
                       </div>
                       {r.image ? (
                         <span className="shrink-0 flex items-center gap-1 text-[#20BFAE] font-bold text-[10px]"><CheckCircle2 className="w-3.5 h-3.5" /> Photo</span>
@@ -2084,22 +2084,22 @@ export default function App() {
               </div>
 
               <div className="p-4 bg-[#EAF5FD] border border-[#A9D8F5] rounded-2xl space-y-2 text-xs text-[#1F5C82]">
-                <div className="flex justify-between"><span>Employment Income:</span><span className="font-bold">RM {scenarioCalc.grossEmp.toLocaleString()}</span></div>
-                <div className="flex justify-between"><span>Net Side Business Profit:</span><span className="font-bold text-[#2E7CB8]">+ RM {scenarioCalc.netSide.toLocaleString()}</span></div>
-                <div className="flex justify-between"><span>Net Taxable Rental Income:</span><span className="font-bold text-[#2E7CB8]">+ RM {scenarioCalc.netRent.toLocaleString()}</span></div>
-                <div className="border-t border-[#A9D8F5] pt-2 flex justify-between font-black text-sm"><span>Combined Taxable Income:</span><span>RM {scenarioCalc.totalTaxable.toLocaleString()}</span></div>
+                <div className="flex justify-between"><span>Employment Income:</span><span className="font-bold">RM {scenarioCalc.grossEmp.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span></div>
+                <div className="flex justify-between"><span>Net Side Business Profit:</span><span className="font-bold text-[#2E7CB8]">+ RM {scenarioCalc.netSide.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span></div>
+                <div className="flex justify-between"><span>Net Taxable Rental Income:</span><span className="font-bold text-[#2E7CB8]">+ RM {scenarioCalc.netRent.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span></div>
+                <div className="border-t border-[#A9D8F5] pt-2 flex justify-between font-black text-sm"><span>Combined Taxable Income:</span><span>RM {scenarioCalc.totalTaxable.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span></div>
               </div>
 
               {scenarioCalc.isConnected ? (
                 <div className="p-3.5 bg-[#E7F8F1] border border-[#20BFAE]/40 rounded-2xl space-y-2">
                   <p className="text-xs font-bold text-[#0d9488] flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4" /> Included in your tax calculation</p>
-                  <p className="text-[11px] text-[#20BFAE]">Your dashboard, refund/owed, and Spouse tab all currently include this RM {scenarioCalc.netOther.toLocaleString()} as real income.</p>
+                  <p className="text-[11px] text-[#20BFAE]">Your dashboard, refund/owed, and Spouse tab all currently include this RM {scenarioCalc.netOther.toLocaleString(undefined, { maximumFractionDigits: 0 })} as real income.</p>
                   <button onClick={() => setOtherIncomeAmt("0")} className="w-full py-2 rounded-xl bg-white border border-[#20BFAE] text-[#20BFAE] font-bold text-xs">Remove From My Tax Calculation</button>
                 </div>
               ) : (
                 <div className="p-3.5 bg-gray-50 border border-gray-200 rounded-2xl space-y-2">
                   <p className="text-[11px] text-gray-500">This is a what-if sandbox — it doesn't affect your real numbers until you connect it below.</p>
-                  <button onClick={() => setOtherIncomeAmt(String(scenarioCalc.netOther))} disabled={scenarioCalc.netOther <= 0} className="w-full py-2.5 rounded-xl bg-[#4A90C2] hover:bg-[#3B7BAA] text-white font-bold text-xs disabled:opacity-40 disabled:cursor-not-allowed">Include RM {scenarioCalc.netOther.toLocaleString()} in My Tax Calculation</button>
+                  <button onClick={() => setOtherIncomeAmt(String(scenarioCalc.netOther))} disabled={scenarioCalc.netOther <= 0} className="w-full py-2.5 rounded-xl bg-[#4A90C2] hover:bg-[#3B7BAA] text-white font-bold text-xs disabled:opacity-40 disabled:cursor-not-allowed">Include RM {scenarioCalc.netOther.toLocaleString(undefined, { maximumFractionDigits: 0 })} in My Tax Calculation</button>
                 </div>
               )}
             </div>
@@ -2213,8 +2213,8 @@ export default function App() {
                     <p className="font-bold text-gray-800 text-xs">C1: Penggajian (Employment Income)</p>
                     <p className="text-[10px] text-gray-400">Match EA Form Line C</p>
                   </div>
-                  <button onClick={() => { navigator.clipboard?.writeText(String(Math.round(parseFloat(income) || 0))); showToast(`C1 copied: RM ${(parseFloat(income) || 0).toLocaleString()}`); }} className="shrink-0 flex flex-col items-end gap-1">
-                    <span className="font-extrabold text-gray-900 text-xs">RM {(parseFloat(income) || 0).toLocaleString()}</span>
+                  <button onClick={() => { navigator.clipboard?.writeText(String(Math.round(parseFloat(income) || 0))); showToast(`C1 copied: RM ${(parseFloat(income) || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}`); }} className="shrink-0 flex flex-col items-end gap-1">
+                    <span className="font-extrabold text-gray-900 text-xs">RM {(parseFloat(income) || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
                     <span className="px-2.5 py-1 bg-white border border-gray-200 rounded-lg font-bold text-[10px] flex items-center gap-1 hover:border-[#20BFAE]"><ClipboardCopy className="w-3 h-3" /> Copy</span>
                   </button>
                 </div>
@@ -2228,10 +2228,10 @@ export default function App() {
                       <div key={r.line} className={`p-3 rounded-2xl border flex items-center justify-between gap-2 ${r.val > 0 ? "bg-gray-50 border-gray-100" : "bg-white border-gray-100 opacity-70"}`}>
                         <div className="min-w-0">
                           <p className="font-bold text-gray-800 text-xs">{r.line}: {r.label}</p>
-                          <p className="text-[10px] text-gray-400">Statutory Cap: RM {r.limit.toLocaleString()}</p>
+                          <p className="text-[10px] text-gray-400">Statutory Cap: RM {r.limit.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
                         </div>
-                        <button onClick={() => { navigator.clipboard?.writeText(String(r.val)); showToast(`${r.line} copied: RM ${r.val.toLocaleString()}`); }} className="shrink-0 flex flex-col items-end gap-1">
-                          <span className={`font-extrabold text-xs ${r.val > 0 ? "text-gray-900" : "text-gray-400"}`}>RM {r.val.toLocaleString()}</span>
+                        <button onClick={() => { navigator.clipboard?.writeText(String(r.val)); showToast(`${r.line} copied: RM ${r.val.toLocaleString(undefined, { maximumFractionDigits: 0 })}`); }} className="shrink-0 flex flex-col items-end gap-1">
+                          <span className={`font-extrabold text-xs ${r.val > 0 ? "text-gray-900" : "text-gray-400"}`}>RM {r.val.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
                           <span className="px-2.5 py-1 bg-white border border-gray-200 rounded-lg font-bold text-[10px] flex items-center gap-1 hover:border-[#20BFAE]"><ClipboardCopy className="w-3 h-3" /> Copy</span>
                         </button>
                       </div>
@@ -2330,7 +2330,7 @@ export default function App() {
                           </div>
                         </div>
                         <div className="flex items-center gap-2 ml-2 shrink-0">
-                          <span className="font-extrabold text-[#20BFAE] text-sm">RM {r.amount.toLocaleString()}</span>
+                          <span className="font-extrabold text-[#20BFAE] text-sm">RM {r.amount.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
                           <button onClick={() => startEdit(r)} className="p-1.5 rounded-lg text-gray-400 hover:text-[#20BFAE]"><Edit2 className="w-3.5 h-3.5" /></button>
                           <button onClick={() => handleDelete(r.id)} className="p-1.5 rounded-lg text-gray-400 hover:text-rose-500"><Trash2 className="w-3.5 h-3.5" /></button>
                         </div>
@@ -2387,19 +2387,19 @@ export default function App() {
                                 </tr>
                               </thead>
                               <tbody className="divide-y divide-gray-100">
-                                <tr><td className="px-3 py-1.5 text-gray-600">Gross Income</td><td className="px-3 py-1.5 text-right font-semibold">RM {spouseAnalysisDetailed.separate.grossMine.toLocaleString()}</td><td className="px-3 py-1.5 text-right font-semibold">RM {spouseAnalysisDetailed.separate.grossSpouse.toLocaleString()}</td></tr>
-                                <tr><td className="px-3 py-1.5 text-gray-600">Total Reliefs Claimed</td><td className="px-3 py-1.5 text-right text-[#20BFAE] font-semibold">-RM {spouseAnalysisDetailed.separate.selfReliefs.toLocaleString()}</td><td className="px-3 py-1.5 text-right text-[#20BFAE] font-semibold">-RM {spouseAnalysisDetailed.separate.spouseReliefs.toLocaleString()}</td></tr>
-                                <tr><td className="px-3 py-1.5 text-gray-800 font-semibold">Chargeable Income</td><td className="px-3 py-1.5 text-right font-bold">RM {spouseAnalysisDetailed.separate.chargeableSelfSep.toLocaleString()}</td><td className="px-3 py-1.5 text-right font-bold">RM {spouseAnalysisDetailed.separate.chargeableSpouseSep.toLocaleString()}</td></tr>
-                                <tr className="bg-gray-50"><td className="px-3 py-1.5 font-bold text-gray-900">Tax Payable</td><td className="px-3 py-1.5 text-right font-black">RM {spouseAnalysisDetailed.separate.taxSelfSep.toLocaleString()}</td><td className="px-3 py-1.5 text-right font-black">RM {spouseAnalysisDetailed.separate.taxSpouseSep.toLocaleString()}</td></tr>
+                                <tr><td className="px-3 py-1.5 text-gray-600">Gross Income</td><td className="px-3 py-1.5 text-right font-semibold">RM {spouseAnalysisDetailed.separate.grossMine.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td><td className="px-3 py-1.5 text-right font-semibold">RM {spouseAnalysisDetailed.separate.grossSpouse.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td></tr>
+                                <tr><td className="px-3 py-1.5 text-gray-600">Total Reliefs Claimed</td><td className="px-3 py-1.5 text-right text-[#20BFAE] font-semibold">-RM {spouseAnalysisDetailed.separate.selfReliefs.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td><td className="px-3 py-1.5 text-right text-[#20BFAE] font-semibold">-RM {spouseAnalysisDetailed.separate.spouseReliefs.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td></tr>
+                                <tr><td className="px-3 py-1.5 text-gray-800 font-semibold">Chargeable Income</td><td className="px-3 py-1.5 text-right font-bold">RM {spouseAnalysisDetailed.separate.chargeableSelfSep.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td><td className="px-3 py-1.5 text-right font-bold">RM {spouseAnalysisDetailed.separate.chargeableSpouseSep.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td></tr>
+                                <tr className="bg-gray-50"><td className="px-3 py-1.5 font-bold text-gray-900">Tax Payable</td><td className="px-3 py-1.5 text-right font-black">RM {spouseAnalysisDetailed.separate.taxSelfSep.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td><td className="px-3 py-1.5 text-right font-black">RM {spouseAnalysisDetailed.separate.taxSpouseSep.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td></tr>
                               </tbody>
                             </table>
                             <div className="px-3 py-2 bg-white border-t border-gray-100 flex justify-between items-center">
                               <span className="text-[11px] font-semibold text-gray-600">Combined Tax:</span>
-                              <span className="font-black text-[#20BFAE] text-sm">RM {spouseAnalysisDetailed.separate.totalTax.toLocaleString()}</span>
+                              <span className="font-black text-[#20BFAE] text-sm">RM {spouseAnalysisDetailed.separate.totalTax.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
                             </div>
                             <div className={`px-3 py-2 border-t flex justify-between items-center ${(spouseAnalysisDetailed.separate.balanceSelfSep + spouseAnalysisDetailed.separate.balanceSpouseSep) <= 0 ? "bg-[#E7F8F1] border-[#20BFAE]/20" : "bg-[#FFF3E8] border-[#FF9F43]/30"}`}>
                               <span className="text-[11px] font-semibold text-gray-600">{(spouseAnalysisDetailed.separate.balanceSelfSep + spouseAnalysisDetailed.separate.balanceSpouseSep) <= 0 ? "Est. Combined Refund:" : "Est. Combined Balance Owed:"}</span>
-                              <span className="font-black text-sm">RM {Math.abs(spouseAnalysisDetailed.separate.balanceSelfSep + spouseAnalysisDetailed.separate.balanceSpouseSep).toLocaleString()}</span>
+                              <span className="font-black text-sm">RM {Math.abs(spouseAnalysisDetailed.separate.balanceSelfSep + spouseAnalysisDetailed.separate.balanceSpouseSep).toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
                             </div>
                           </div>
 
@@ -2410,17 +2410,17 @@ export default function App() {
                               {spouseAnalysisDetailed.recommended === "JOINT" && <span className="text-[9px] bg-[#35C99A] px-2 py-0.5 rounded-full font-bold">Recommended</span>}
                             </div>
                             <div className="p-3 space-y-1.5 text-[11px] bg-white">
-                              <div className="flex justify-between"><span className="text-gray-600">Combined Gross Income:</span><span className="font-semibold">RM {spouseAnalysisDetailed.joint.combinedGross.toLocaleString()}</span></div>
-                              <div className="flex justify-between"><span className="text-gray-600">Combined Reliefs (incl. RM4,000 spouse relief{spouseDisabled ? " + RM6,000 disabled" : ""}):</span><span className="text-[#20BFAE] font-semibold">-RM {spouseAnalysisDetailed.joint.jointReliefTotal.toLocaleString()}</span></div>
-                              <div className="flex justify-between font-semibold text-gray-800 pt-1 border-t border-gray-100"><span>Chargeable Income:</span><span>RM {spouseAnalysisDetailed.joint.chargeableJoint.toLocaleString()}</span></div>
+                              <div className="flex justify-between"><span className="text-gray-600">Combined Gross Income:</span><span className="font-semibold">RM {spouseAnalysisDetailed.joint.combinedGross.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span></div>
+                              <div className="flex justify-between"><span className="text-gray-600">Combined Reliefs (incl. RM4,000 spouse relief{spouseDisabled ? " + RM6,000 disabled" : ""}):</span><span className="text-[#20BFAE] font-semibold">-RM {spouseAnalysisDetailed.joint.jointReliefTotal.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span></div>
+                              <div className="flex justify-between font-semibold text-gray-800 pt-1 border-t border-gray-100"><span>Chargeable Income:</span><span>RM {spouseAnalysisDetailed.joint.chargeableJoint.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span></div>
                             </div>
                             <div className="px-3 py-2 bg-gray-50 border-t border-gray-100 flex justify-between items-center">
                               <span className="text-[11px] font-semibold text-gray-600">Joint Tax Payable:</span>
-                              <span className="font-black text-[#20BFAE] text-sm">RM {spouseAnalysisDetailed.joint.totalTax.toLocaleString()}</span>
+                              <span className="font-black text-[#20BFAE] text-sm">RM {spouseAnalysisDetailed.joint.totalTax.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
                             </div>
                             <div className={`px-3 py-2 border-t flex justify-between items-center ${spouseAnalysisDetailed.joint.balanceJoint <= 0 ? "bg-[#E7F8F1] border-[#20BFAE]/20" : "bg-[#FFF3E8] border-[#FF9F43]/30"}`}>
                               <span className="text-[11px] font-semibold text-gray-600">{spouseAnalysisDetailed.joint.balanceJoint <= 0 ? "Est. Refund:" : "Est. Balance Owed:"}</span>
-                              <span className="font-black text-sm">RM {Math.abs(spouseAnalysisDetailed.joint.balanceJoint).toLocaleString()}</span>
+                              <span className="font-black text-sm">RM {Math.abs(spouseAnalysisDetailed.joint.balanceJoint).toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
                             </div>
                           </div>
 
@@ -2429,16 +2429,16 @@ export default function App() {
                             <p className="font-bold text-gray-700 text-[11px]">Who's claiming what (by category)</p>
                             {spouseAnalysisDetailed.catBreakdown.filter(c => c.mine > 0 || c.spouse > 0).map(c => (
                               <div key={c.id} className="space-y-1">
-                                <div className="flex justify-between text-[11px] text-gray-700 font-semibold"><span className="truncate pr-2">{c.name}</span><span className="text-gray-400 font-normal shrink-0">Cap RM {c.limit.toLocaleString()}</span></div>
+                                <div className="flex justify-between text-[11px] text-gray-700 font-semibold"><span className="truncate pr-2">{c.name}</span><span className="text-gray-400 font-normal shrink-0">Cap RM {c.limit.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span></div>
                                 <div className="flex items-center gap-1.5">
                                   <span className="text-[9px] text-[#20BFAE] font-bold w-8 shrink-0">You</span>
                                   <div className="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden"><div className="h-full bg-[#35C99A]" style={{ width: `${Math.min(100, (c.mine / c.limit) * 100)}%` }} /></div>
-                                  <span className="text-[9px] text-gray-500 w-16 text-right shrink-0">RM {c.mine.toLocaleString()}</span>
+                                  <span className="text-[9px] text-gray-500 w-16 text-right shrink-0">RM {c.mine.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
                                 </div>
                                 <div className="flex items-center gap-1.5">
                                   <span className="text-[9px] text-rose-600 font-bold w-8 shrink-0 truncate">{(spouseName || "Spouse").slice(0, 6)}</span>
                                   <div className="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden"><div className="h-full bg-rose-400" style={{ width: `${Math.min(100, (c.spouse / c.limit) * 100)}%` }} /></div>
-                                  <span className="text-[9px] text-gray-500 w-16 text-right shrink-0">RM {c.spouse.toLocaleString()}</span>
+                                  <span className="text-[9px] text-gray-500 w-16 text-right shrink-0">RM {c.spouse.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
                                 </div>
                               </div>
                             ))}
@@ -2505,7 +2505,7 @@ export default function App() {
                   {parseFloat(otherIncomeAmt) > 0 && (
                     <div className="flex items-center justify-between p-2.5 bg-[#EAF5FD] border border-[#A9D8F5] rounded-xl text-xs">
                       <span className="text-[#2E7CB8] font-semibold">+ Side Hustle/Rental Income (connected)</span>
-                      <span className="font-bold text-[#1F5C82]">RM {parseFloat(otherIncomeAmt).toLocaleString()}</span>
+                      <span className="font-bold text-[#1F5C82]">RM {parseFloat(otherIncomeAmt).toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
                     </div>
                   )}
                   <div><label className="text-xs font-bold text-gray-700 block mb-1">Annual EPF Contribution (RM)</label><input type="number" value={epfAmt} onChange={e => setEpfAmt(e.target.value)} placeholder="e.g. 10098" className="w-full p-3 rounded-xl border border-gray-200 font-bold text-sm outline-none focus:ring-2 focus:ring-[#A9D8F5] bg-white" /><p className="text-[10px] text-gray-400 mt-1">LHDN relief cap: RM 4,000</p></div>
@@ -2567,9 +2567,9 @@ export default function App() {
                     <span className="font-extrabold text-xs text-[#0d9488] tracking-wider">YOU'RE SAVING</span>
                     <span className="font-extrabold text-xl text-[#0d9488]">{fmt(taxSaved)}</span>
                   </div>
-                  <div className={`p-3 rounded-xl flex justify-between items-center ${myBalance <= 0 ? "bg-white border border-[#20BFAE]/40" : "bg-[#FFF3E8] border border-[#FF9F43]/40"}`}>
-                    <span className={`font-extrabold text-xs tracking-wider ${myBalance <= 0 ? "text-[#20BFAE]" : "text-[#B15A1E]"}`}>{myBalance <= 0 ? "ESTIMATED REFUND" : "ESTIMATED BALANCE OWED"}</span>
-                    <span className={`font-extrabold text-xl ${myBalance <= 0 ? "text-[#20BFAE]" : "text-[#B15A1E]"}`}>{fmt(Math.abs(myBalance))}</span>
+                  <div className={`p-3 rounded-xl flex justify-between items-center gap-2 flex-wrap ${myBalance <= 0 ? "bg-white border border-[#20BFAE]/40" : "bg-[#FFF3E8] border border-[#FF9F43]/40"}`}>
+                    <span className={`font-extrabold text-[11px] tracking-normal ${myBalance <= 0 ? "text-[#20BFAE]" : "text-[#B15A1E]"}`}>{myBalance <= 0 ? "ESTIMATED REFUND" : "ESTIMATED BALANCE OWED"}</span>
+                    <span className={`font-extrabold text-lg ${myBalance <= 0 ? "text-[#20BFAE]" : "text-[#B15A1E]"}`}>{fmt(Math.abs(myBalance))}</span>
                   </div>
                   <p className="text-[10px] text-gray-500">Net tax payable (after zakat) minus PCB already deducted. Effective rate: {effRate}%</p>
                 </div>
@@ -2589,7 +2589,7 @@ export default function App() {
                       In Malaysia, married working couples can choose between <strong>Joint Assessment</strong> and <strong>Separate Assessment</strong>. Separate is usually better when both earn taxable income.
                     </p>
                     <div className="grid grid-cols-2 gap-3 text-xs">
-                      <div><label className="font-bold text-gray-700 block mb-1">Your Income</label><div className="p-3 rounded-2xl bg-gray-100 font-extrabold text-sm border border-gray-200">RM {totalIncome.toLocaleString()}</div></div>
+                      <div><label className="font-bold text-gray-700 block mb-1">Your Income</label><div className="p-3 rounded-2xl bg-gray-100 font-extrabold text-sm border border-gray-200">RM {totalIncome.toLocaleString(undefined, { maximumFractionDigits: 0 })}</div></div>
                       <div><label className="font-bold text-gray-700 block mb-1">Spouse Income</label><input type="number" value={spouseInc} onChange={e => setSpouseInc(e.target.value)} placeholder="e.g. 54000" className="w-full p-3 rounded-2xl border border-gray-200 font-extrabold text-sm outline-none focus:ring-2 focus:ring-rose-400 bg-white" /></div>
                     </div>
                     <div>
@@ -2617,11 +2617,11 @@ export default function App() {
                     )}
                     <div className="p-4 rounded-2xl bg-[#E7F8F1] border border-[#20BFAE]/40 space-y-3 text-xs">
                       <p className="font-bold text-[#0d9488] text-sm">Quick Comparison:</p>
-                      <div className="flex justify-between p-2 rounded-xl bg-white/60 border border-[#20BFAE]/20"><span className="text-gray-600">Joint Filing Tax:</span><span className="font-extrabold text-rose-600">RM {spouseAnalysisDetailed.joint.totalTax.toLocaleString()}</span></div>
-                      <div className="flex justify-between p-2 rounded-xl bg-white/60 border border-[#20BFAE]/20"><span className="text-gray-600">Separate Filing:</span><span className="font-extrabold text-[#20BFAE]">RM {spouseAnalysisDetailed.separate.totalTax.toLocaleString()}</span></div>
+                      <div className="flex justify-between p-2 rounded-xl bg-white/60 border border-[#20BFAE]/20"><span className="text-gray-600">Joint Filing Tax:</span><span className="font-extrabold text-rose-600">RM {spouseAnalysisDetailed.joint.totalTax.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span></div>
+                      <div className="flex justify-between p-2 rounded-xl bg-white/60 border border-[#20BFAE]/20"><span className="text-gray-600">Separate Filing:</span><span className="font-extrabold text-[#20BFAE]">RM {spouseAnalysisDetailed.separate.totalTax.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span></div>
                       <div className="pt-2 border-t border-[#20BFAE]/40 flex items-start gap-2">
                         <CheckCircle2 className="w-5 h-5 text-[#20BFAE] shrink-0 mt-0.5" />
-                        <div><p className="font-extrabold text-sm text-[#0d9488]">{spouseAnalysisDetailed.recommended === "SEPARATE" ? "File Separately" : spouseAnalysisDetailed.recommended === "JOINT" ? "File Jointly" : "Either — same result"}</p><p className="text-[11px] text-[#20BFAE] font-normal">{spouseAnalysisDetailed.savings > 0 ? `Saves RM ${spouseAnalysisDetailed.savings.toLocaleString()} in household taxes` : "Both options result in the same tax"}</p></div>
+                        <div><p className="font-extrabold text-sm text-[#0d9488]">{spouseAnalysisDetailed.recommended === "SEPARATE" ? "File Separately" : spouseAnalysisDetailed.recommended === "JOINT" ? "File Jointly" : "Either — same result"}</p><p className="text-[11px] text-[#20BFAE] font-normal">{spouseAnalysisDetailed.savings > 0 ? `Saves RM ${spouseAnalysisDetailed.savings.toLocaleString(undefined, { maximumFractionDigits: 0 })} in household taxes` : "Both options result in the same tax"}</p></div>
                       </div>
                     </div>
 
@@ -2750,10 +2750,10 @@ export default function App() {
               <div>
                 <label className="font-bold text-gray-700 block mb-1">LHDN Category *</label>
                 <button onClick={() => { setShowReceipt(false); setShowCatPick(true); }} className="w-full p-3 rounded-xl border border-gray-200 bg-white font-semibold text-gray-800 flex items-center justify-between hover:bg-gray-50">
-                  <span>{form.category ? `${getCat(form.category)?.name} (max RM ${getCatLimit(getCat(form.category)).toLocaleString()})` : "Select category…"}</span>
+                  <span>{form.category ? `${getCat(form.category)?.name} (max RM ${getCatLimit(getCat(form.category)).toLocaleString(undefined, { maximumFractionDigits: 0 })})` : "Select category…"}</span>
                   <ChevronDown className="w-4 h-4 text-gray-400" />
                 </button>
-                {form.category && (() => { const { rem } = getStats(form.category); const orig = editId ? (receipts.find(r => r.id === editId)?.amount || 0) : 0; const max = rem + orig; return max > 0 ? <p className="text-[11px] text-[#20BFAE] mt-1">RM {max.toLocaleString()} available to claim</p> : null; })()}
+                {form.category && (() => { const { rem } = getStats(form.category); const orig = editId ? (receipts.find(r => r.id === editId)?.amount || 0) : 0; const max = rem + orig; return max > 0 ? <p className="text-[11px] text-[#20BFAE] mt-1">RM {max.toLocaleString(undefined, { maximumFractionDigits: 0 })} available to claim</p> : null; })()}
                 {form.category && getCat(form.category)?.note && (
                   <p className="text-[11px] text-gray-400 mt-1 leading-snug">ℹ️ {getCat(form.category).note}</p>
                 )}
@@ -2803,7 +2803,7 @@ export default function App() {
                 <p className="text-[10px] font-extrabold text-gray-400 uppercase tracking-wider px-2 py-1">{g}</p>
                 {CATS.filter(c => c.g === g).map(c => (
                   <button key={c.id} onClick={() => { setForm(f => ({ ...f, category: c.id, amount: "" })); setShowCatPick(false); setShowReceipt(true); }} className={`w-full text-left px-4 py-3 rounded-2xl text-xs font-bold flex items-center justify-between transition mb-1 ${form.category === c.id ? "bg-[#E7F8F1] text-[#0d9488] border border-[#20BFAE]/40" : "text-gray-700 hover:bg-gray-50"}`}>
-                    <div><p className="font-bold">{c.emoji} {c.name}</p><p className="text-[10px] text-gray-400 font-normal">Max RM {getCatLimit(c).toLocaleString()}</p></div>
+                    <div><p className="font-bold">{c.emoji} {c.name}</p><p className="text-[10px] text-gray-400 font-normal">Max RM {getCatLimit(c).toLocaleString(undefined, { maximumFractionDigits: 0 })}</p></div>
                     {form.category === c.id && <Check className="w-4 h-4 text-[#20BFAE]" />}
                   </button>
                 ))}
@@ -2827,7 +2827,7 @@ export default function App() {
                 <p className="text-[10px] font-extrabold text-gray-400 uppercase tracking-wider px-2 py-1">{g}</p>
                 {CATS.filter(c => c.g === g).map(c => (
                   <button key={c.id} onClick={() => { setRcptCatF(c.id); setShowFilterPick(false); setShowVault(true); }} className={`w-full text-left px-4 py-3 rounded-2xl text-xs font-bold flex items-center justify-between transition mb-1 ${rcptCatF === c.id ? "bg-[#E7F8F1] text-[#0d9488] border border-[#20BFAE]/40" : "text-gray-700 hover:bg-gray-50"}`}>
-                    <div><p className="font-bold">{c.emoji} {c.name}</p><p className="text-[10px] text-gray-400 font-normal">Max RM {getCatLimit(c).toLocaleString()}</p></div>
+                    <div><p className="font-bold">{c.emoji} {c.name}</p><p className="text-[10px] text-gray-400 font-normal">Max RM {getCatLimit(c).toLocaleString(undefined, { maximumFractionDigits: 0 })}</p></div>
                     {rcptCatF === c.id && <Check className="w-4 h-4 text-[#20BFAE]" />}
                   </button>
                 ))}
