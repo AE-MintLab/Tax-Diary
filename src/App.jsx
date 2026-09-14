@@ -1511,22 +1511,22 @@ export default function App() {
       "Gives us a starting estimate — fine-tune the exact figure anytime in Settings.",
       "Helps us apply the right reliefs from day one.",
     ];
-    const pillBase = "py-3 px-4 rounded-2xl border-2 font-bold text-sm text-center transition";
+    const pillBase = "py-3 px-4 rounded-2xl border-2 font-bold text-sm text-center transition active:scale-[0.97]";
     const pillOn = "bg-[#35C99A] border-[#20BFAE] text-white";
-    const pillOff = "bg-white/5 border-white/15 text-gray-200 hover:border-white/30";
+    const pillOff = "bg-white border-[#173B67]/15 text-[#173B67] hover:border-[#20BFAE]/50";
     const isWelcome = setupStep === 4;
 
     return (
-      <div className="fixed inset-0 bg-gradient-to-br from-gray-950 via-[#173B67] to-gray-950 flex flex-col overflow-y-auto select-none">
+      <div className="fixed inset-0 bg-gradient-to-br from-[#42CFC0] via-[#8EDDB7] to-[#FFF0B5] flex flex-col overflow-y-auto select-none">
         {!isWelcome && (
           <div className="flex justify-between items-center p-6 shrink-0">
             {setupStep > 1 ? (
-              <button onClick={() => setSetupStep(p => p - 1)} className="text-gray-300 text-xs font-bold px-3 py-1.5 rounded-full bg-white/10 border border-white/20">← Back</button>
+              <button onClick={() => setSetupStep(p => p - 1)} className="text-[#173B67] text-xs font-bold px-3 py-1.5 rounded-full bg-white/60 border border-white/70 active:scale-95 transition">← Back</button>
             ) : <span />}
             <div className="flex gap-1.5">
-              {[1, 2, 3].map(s => (<div key={s} className={`rounded-full transition-all ${setupStep === s ? "w-6 h-2 bg-[#FFC928]" : "w-2 h-2 bg-white/25"}`} />))}
+              {[1, 2, 3].map(s => (<div key={s} className={`rounded-full transition-all ${setupStep === s ? "w-6 h-2 bg-[#FFC928]" : "w-2 h-2 bg-[#173B67]/20"}`} />))}
             </div>
-            <button onClick={() => finishSetup(true)} className="text-gray-300 text-xs font-bold px-3 py-1.5 rounded-full bg-white/10 border border-white/20">Skip</button>
+            <button onClick={() => finishSetup(true)} className="text-[#173B67] text-xs font-bold px-3 py-1.5 rounded-full bg-white/60 border border-white/70 active:scale-95 transition">Skip</button>
           </div>
         )}
 
@@ -1535,12 +1535,12 @@ export default function App() {
             <div className="text-center space-y-5">
               <div className="w-16 h-16 rounded-2xl bg-[#35C99A] flex items-center justify-center mx-auto shadow-lg"><CheckCircle2 className="w-8 h-8 text-white" /></div>
               <div className="space-y-2">
-                <h1 className="text-2xl font-black text-white">Welcome to Tax Diary{clientName ? `, ${clientName}` : ""}!</h1>
-                <p className="text-sm text-gray-400 leading-relaxed max-w-xs mx-auto">You're all set up. You can edit your profile anytime in Settings.</p>
+                <h1 className="text-2xl font-black text-[#173B67]">Welcome to Tax Diary{clientName ? `, ${clientName}` : ""}!</h1>
+                <p className="text-sm text-[#173B67]/70 leading-relaxed max-w-xs mx-auto">You're all set up. You can edit your profile anytime in Settings.</p>
               </div>
               <button
                 onClick={() => finishSetup(false)}
-                className="w-full py-3.5 rounded-2xl bg-white text-gray-900 font-black text-sm shadow-xl hover:bg-[#FFC928] hover:text-[#173B67] transition active:scale-95 flex items-center justify-center gap-2"
+                className="w-full py-3.5 rounded-2xl bg-white text-[#173B67] font-black text-sm shadow-xl hover:bg-[#FFC928] transition active:scale-95 flex items-center justify-center gap-2"
               >
                 Start your Tax Diary <ArrowRight className="w-4 h-4" />
               </button>
@@ -1548,8 +1548,8 @@ export default function App() {
           ) : (
             <>
               <div className="text-center space-y-1.5">
-                <h1 className="text-2xl font-black text-white">{stepTitles[setupStep - 1]}</h1>
-                <p className="text-xs text-gray-400 leading-relaxed max-w-xs mx-auto">{stepSubs[setupStep - 1]}</p>
+                <h1 className="text-2xl font-black text-[#173B67]">{stepTitles[setupStep - 1]}</h1>
+                <p className="text-xs text-[#173B67]/70 leading-relaxed max-w-xs mx-auto">{stepSubs[setupStep - 1]}</p>
               </div>
 
               {setupStep === 1 && (
@@ -1559,7 +1559,7 @@ export default function App() {
                   onChange={e => setClientName(e.target.value)}
                   placeholder="e.g. Ahmad Ridzuan"
                   autoFocus
-                  className="w-full p-4 rounded-2xl bg-white/10 border-2 border-white/15 focus:border-[#A9D8F5] text-white font-bold text-base text-center outline-none placeholder:text-gray-500"
+                  className="w-full p-4 rounded-2xl bg-white border-2 border-[#173B67]/15 focus:border-[#A9D8F5] text-[#173B67] font-bold text-base text-center outline-none placeholder:text-[#173B67]/40"
                 />
               )}
 
@@ -1568,7 +1568,7 @@ export default function App() {
                   {INCOME_RANGES.map(r => (
                     <button key={r.key} onClick={() => selectIncomeRange(r)} className={`w-full ${pillBase} flex items-center justify-between ${selectedIncomeRangeKey === r.key ? pillOn : pillOff}`}>
                       <span>{r.label}</span>
-                      {r.sub && <span className={`text-[10px] font-medium normal-case ${selectedIncomeRangeKey === r.key ? "text-white" : "text-gray-500"}`}>{r.sub}</span>}
+                      {r.sub && <span className={`text-[10px] font-medium normal-case ${selectedIncomeRangeKey === r.key ? "text-white" : "text-[#173B67]/50"}`}>{r.sub}</span>}
                     </button>
                   ))}
                 </div>
@@ -1577,7 +1577,7 @@ export default function App() {
               {setupStep === 3 && (
                 <div className="space-y-5">
                   <div className="space-y-2">
-                    <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Marital Status</p>
+                    <p className="text-[11px] font-bold text-[#173B67]/60 uppercase tracking-wider">Marital Status</p>
                     <div className="grid grid-cols-2 gap-2.5">
                       <button onClick={() => setMaritalStatus("single")} className={`${pillBase} ${maritalStatus === "single" ? pillOn : pillOff}`}>Single</button>
                       <button onClick={() => setMaritalStatus("married")} className={`${pillBase} ${maritalStatus === "married" ? pillOn : pillOff}`}>Married</button>
@@ -1586,7 +1586,7 @@ export default function App() {
 
                   {hasSpouse && (
                     <div className="space-y-2">
-                      <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Is your spouse working?</p>
+                      <p className="text-[11px] font-bold text-[#173B67]/60 uppercase tracking-wider">Is your spouse working?</p>
                       <div className="grid grid-cols-2 gap-2.5">
                         <button onClick={() => selectSpouseWorking(true)} className={`${pillBase} ${spouseWorkingSel === "working" ? pillOn : pillOff}`}>Working</button>
                         <button onClick={() => selectSpouseWorking(false)} className={`${pillBase} ${spouseWorkingSel === "not" ? pillOn : pillOff}`}>Not working</button>
@@ -1595,7 +1595,7 @@ export default function App() {
                   )}
 
                   <div className="space-y-2">
-                    <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Children under 18</p>
+                    <p className="text-[11px] font-bold text-[#173B67]/60 uppercase tracking-wider">Children under 18</p>
                     <div className="grid grid-cols-5 gap-2">
                       {CHILD_COUNT_OPTIONS.map(n => (
                         <button key={n} onClick={() => setChildU18(n)} className={`${pillBase} px-1 ${childU18 === n ? pillOn : pillOff}`}>{n === 4 ? "4+" : n}</button>
@@ -1607,7 +1607,7 @@ export default function App() {
 
               <button
                 onClick={() => setSetupStep(p => p + 1)}
-                className="w-full py-3.5 rounded-2xl bg-white text-gray-900 font-black text-sm shadow-xl hover:bg-[#FFC928] hover:text-[#173B67] transition active:scale-95"
+                className="w-full py-3.5 rounded-2xl bg-white text-[#173B67] font-black text-sm shadow-xl hover:bg-[#FFC928] transition active:scale-95"
               >
                 Continue
               </button>
