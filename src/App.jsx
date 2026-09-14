@@ -1698,14 +1698,14 @@ export default function App() {
     {/* Left Card: Est. Refund / Balance Owed — stays teal/navy for a refund,
         switches to warm orange for owed (matching the same "owed" treatment
         used everywhere else in the app: Settings summary, spouse comparison) */}
-    <div className={`p-3 rounded-2xl shadow-sm ${myBalance <= 0 ? "bg-white/90" : "bg-[#FFF3E8]"}`}>
-      <p className={`text-[10px] font-black uppercase tracking-wider ${myBalance <= 0 ? "text-[#20BFAE]" : "text-[#FF9F43]"}`}>
+    <div className={`p-3 rounded-2xl shadow-sm ${myBalance <= 0 ? "bg-white/90" : "bg-[#FDEDF2]"}`}>
+      <p className={`text-[10px] font-black uppercase tracking-wider ${myBalance <= 0 ? "text-[#20BFAE]" : "text-[#FF77A9]"}`}>
         {myBalance <= 0 ? "Est. Refund" : "Est. Balance Owed"}
       </p>
-      <p className={`text-lg sm:text-2xl font-black mt-0.5 ${myBalance <= 0 ? "text-[#173B67]" : "text-[#B15A1E]"}`}>
+      <p className={`text-lg sm:text-2xl font-black mt-0.5 ${myBalance <= 0 ? "text-[#173B67]" : "text-[#D6577F]"}`}>
         {fmt(Math.abs(myBalance), 0)}
       </p>
-      <p className={`text-[10px] font-semibold ${myBalance <= 0 ? "text-[#58708F]" : "text-[#B15A1E]/70"}`}>
+      <p className={`text-[10px] font-semibold ${myBalance <= 0 ? "text-[#58708F]" : "text-[#D6577F]/70"}`}>
         vs PCB already paid
       </p>
     </div>
@@ -1807,7 +1807,7 @@ export default function App() {
                                   {c.isAuto ? (
                                     <button onClick={() => openSettings("income")} className="text-[11px] font-bold text-[#B8860B] hover:underline shrink-0">Edit in Profile</button>
                                   ) : (
-                                    <button onClick={() => { setForm({ ...blank(taxYear), category: c.id }); setShowReceipt(true); }} className="text-[11px] font-bold text-[#D6577F] hover:underline shrink-0">+ Add Receipt</button>
+                                    <button onClick={() => { setForm({ ...blank(taxYear), category: c.id }); setShowReceipt(true); }} className="text-[11px] font-bold text-[#0d9488] hover:underline shrink-0">+ Add Receipt</button>
                                   )}
                                 </div>
                               )}
@@ -1844,7 +1844,7 @@ export default function App() {
                       {c.isAuto ? (
                         <button onClick={() => openSettings("income")} className="w-full py-1.5 rounded-xl bg-[#FFF8D9] hover:brightness-95 text-[#B8860B] font-bold text-[11px] border border-[#F4D96B] flex items-center justify-center gap-1">Edit in Profile</button>
                       ) : (
-                        <button onClick={() => { setForm({ ...blank(taxYear), category: c.id }); setShowReceipt(true); }} className="w-full py-1.5 rounded-xl bg-[#FFF8D9] hover:brightness-95 text-[#D6577F] font-bold text-[11px] border border-[#F4D96B] flex items-center justify-center gap-1"><Plus className="w-3 h-3" /> Add Receipt</button>
+                        <button onClick={() => { setForm({ ...blank(taxYear), category: c.id }); setShowReceipt(true); }} className="w-full py-1.5 rounded-xl bg-[#FFF8D9] hover:brightness-95 text-[#0d9488] font-bold text-[11px] border border-[#F4D96B] flex items-center justify-center gap-1"><Plus className="w-3 h-3" /> Add Receipt</button>
                       )}
                     </div>
                   ))}
