@@ -123,21 +123,21 @@ const SLIDES = [
     headline: "NEVER LOSE A\nRECEIPT AGAIN.",
     body: "Keep your tax receipts organised in one place — so when e-Filing comes around, you don't have to dig through WhatsApp, email, drawers and photo galleries.",
     tagline: "Your receipts. One Tax Diary.",
-    bg: "from-[#173B67] via-[#0d9488] to-gray-900",
+    bg: "from-[#42CFC0] via-[#8EDDB7] to-[#FFF0B5]",
   },
   {
     badge: "💡 DISCOVER",
     headline: "SEE WHAT ELSE\nYOU CAN CLAIM.",
     body: "Track your tax reliefs as you record — and spot eligible expenses you might otherwise forget to claim.",
     tagline: "Know what you've claimed. Know what you've missed.",
-    bg: "from-[#173B67] via-gray-900 to-[#0d9488]",
+    bg: "from-[#A9D8F5] via-[#DDF3F9] to-[#FFF8D9]",
   },
   {
     badge: "💰 KNOW YOUR NUMBER",
     headline: "KNOW WHAT\nYOU'LL GET BACK.",
     body: `See your estimated YA ${CURRENT_YA} tax refund as you build your Tax Diary — or find out if you may need to pay more.`,
     tagline: "No more guessing at tax time.",
-    bg: "from-gray-950 via-[#173B67] to-[#0d9488]",
+    bg: "from-[#FFF0B5] via-[#FFDFA8] to-[#F7C5D7]",
   },
 ];
 
